@@ -1,0 +1,7 @@
+[package]
+name = "pgraph"
+version = "0.1.0"
+authors = ["Weston Carvalho <carvalhoweston@gmail.com>"]
+
+[dependencies]
+rpds = { git = "https://github.com/orium/rpds.git" }
