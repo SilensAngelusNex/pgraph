@@ -1,5 +1,5 @@
-use std::cmp::Ordering;
-use std::fmt::{ Debug, Error, Formatter };
+use std::fmt::{Debug, Error, Formatter};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Id {
@@ -13,46 +13,45 @@ impl<'a> Into<usize> for &'a Id {
     }
 }
 
-impl PartialOrd for Id {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        if self.index != other.index {
-            None
-        } else {
-            self.generation.partial_cmp(&other.generation)
-        }
-    }
-}
-
 impl Debug for Id {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         write!(f, "{} gen{}", self.index, self.generation)
     }
 }
 
-#[derive(Clone, Debug)]
+static GENERATION: AtomicUsize = AtomicUsize::new(0);
+
+#[derive(Debug)]
 pub struct IdGen {
-    generation: usize,
+    current_gen: usize,
 }
 
 impl IdGen {
     pub fn new() -> Self {
-        IdGen { generation: 0 }
+        IdGen {
+            current_gen: GENERATION.fetch_add(1, Ordering::Relaxed),
+        }
     }
 
     pub fn create_id(&self, index: usize) -> Id {
         Id {
             index,
-            generation: self.generation,
+            generation: self.current_gen,
         }
     }
 
     pub fn next_gen(&mut self) {
-        self.generation += 1;
+        self.current_gen = GENERATION.fetch_add(1, Ordering::Relaxed);
     }
 
-    #[cfg(test)]
-    fn get_gen(&self) -> usize {
-        self.generation
+    pub(crate) fn get_gen(&self) -> usize {
+        self.current_gen
+    }
+}
+
+impl Clone for IdGen {
+    fn clone(&self) -> Self {
+        Self::new()
     }
 }
 
@@ -81,7 +80,6 @@ mod test {
         b.next_gen();
         let b_first = b.create_id(1);
 
-
         let mut c = b.clone();
         c.next_gen();
         let c_first = c.create_id(1);
@@ -99,8 +97,8 @@ mod test {
         let b1 = b.create_id(1);
         let c1 = c.create_id(1);
 
-        assert_same_index(&a1, &b1);
-        assert_same_index(&b1, &c1);
+        assert!(a1.generation < b1.generation);
+        assert!(b1.generation < c1.generation);
 
         assert!(a1 < b1);
         assert!(b1 < c1);

@@ -1,18 +1,21 @@
-use std::fmt::{ Debug, Error, Formatter };
-
-use rpds::Vector;
 use id::Id;
+use rpds::Vector;
+use std::fmt::{Debug, Error, Formatter};
+use std::iter::{FilterMap, IntoIterator};
+use std::ops::{Index, IndexMut};
 
 pub type Edge<E> = (Id, E);
 
 pub(crate) struct AdjList<E> {
-    edges: Vector<Option<Edge<E>>>
+    edges: Vector<Option<Edge<E>>>,
 }
 
 // Derive only implements for <E: Clone> because of rust#26925
 impl<E> Clone for AdjList<E> {
     fn clone(&self) -> Self {
-        AdjList { edges: self.edges.clone() }
+        AdjList {
+            edges: self.edges.clone(),
+        }
     }
 }
 
@@ -26,7 +29,7 @@ impl<E: Debug> Debug for AdjList<E> {
 
         for (id, weight) in iter {
             write!(f, ", {:?}: {:?}", id, weight)?;
-        };
+        }
 
         Result::Ok(())
     }
@@ -34,7 +37,9 @@ impl<E: Debug> Debug for AdjList<E> {
 
 impl<E> AdjList<E> {
     pub(crate) fn new() -> Self {
-        AdjList { edges: Vector::new() }
+        AdjList {
+            edges: Vector::new(),
+        }
     }
 
     pub(crate) fn len(&self) -> usize {
@@ -113,19 +118,46 @@ impl<E: PartialEq<F>, F> PartialEq<AdjList<F>> for AdjList<E> {
         let item1 = iter1.next();
         let item2 = iter2.next();
 
-
-
         loop {
             match item1 {
                 Some((id1, e1)) => match item2 {
                     Some((id2, e2)) if id1 == id2 && e1 == e2 => (),
-                    _ => break false
-                }
+                    _ => break false,
+                },
                 None => match item2 {
                     Some(_) => break false,
-                    None => break true
-                }
+                    None => break true,
+                },
             }
         }
+    }
+}
+
+impl<E> Index<Id> for AdjList<E> {
+    type Output = E;
+
+    fn index(&self, id: Id) -> &E {
+        self.get_edge(&id).unwrap()
+    }
+}
+
+impl<E: Clone> IndexMut<Id> for AdjList<E> {
+    fn index_mut(&mut self, id: Id) -> &mut E {
+        self.get_edge_mut(&id).unwrap()
+    }
+}
+
+pub type IterItem<'a, E> = &'a Edge<E>;
+pub type Iter<'a, E> = FilterMap<
+    <&'a Vector<Option<Edge<E>>> as IntoIterator>::IntoIter,
+    fn(&'a Option<Edge<E>>) -> Option<IterItem<'a, E>>,
+>;
+
+impl<'a, E> IntoIterator for &'a AdjList<E> {
+    type Item = IterItem<'a, E>;
+    type IntoIter = Iter<'a, E>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.edges.iter().filter_map(|e| e.as_ref())
     }
 }

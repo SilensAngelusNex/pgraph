@@ -1,7 +1,8 @@
-use std::fmt::{ Debug, Error, Formatter };
-use id::Id;
 use self::adj::AdjList;
-use self::adj::Edge;
+use id::Id;
+use std::fmt::{Debug, Error, Formatter};
+use std::iter::IntoIterator;
+use std::ops::{Index, IndexMut};
 
 pub mod adj;
 
@@ -17,21 +18,23 @@ impl<V: Debug, E: Debug> Debug for Vertex<V, E> {
     }
 }
 
-
 impl<V: Clone, E> Clone for Vertex<V, E> {
     fn clone(&self) -> Self {
-        Vertex { id: self.id, data: self.data.clone(), adj: self.adj.clone() }
+        Vertex {
+            id: self.id,
+            data: self.data.clone(),
+            adj: self.adj.clone(),
+        }
     }
 }
 
 impl<V, E> Vertex<V, E> {
-
     pub fn get_data(&self) -> &V {
         &self.data
     }
 
     pub fn get_id(&self) -> &Id {
-       &self.id 
+        &self.id
     }
 
     pub fn get_cost(&self, sink: &Id) -> Option<&E> {
@@ -46,16 +49,16 @@ impl<V, E> Vertex<V, E> {
         self.adj.len()
     }
 
-    pub fn iter_neighbors(&self) -> impl Iterator<Item = &Edge<E>>{
-        self.adj.iter()
-    }
-
     pub fn get_data_mut(&mut self) -> &mut V {
         &mut self.data
     }
 
     pub(crate) fn from(id: Id, data: V) -> Self {
-        Vertex { id, data, adj: AdjList::new() }
+        Vertex {
+            id,
+            data,
+            adj: AdjList::new(),
+        }
     }
 
     pub(crate) fn same_id(&self, id: &Id) -> bool {
@@ -77,3 +80,25 @@ impl<V, E: Clone> Vertex<V, E> {
     }
 }
 
+impl<V, E> Index<Id> for Vertex<V, E> {
+    type Output = E;
+
+    fn index(&self, id: Id) -> &E {
+        self.adj.index(id)
+    }
+}
+
+impl<V, E: Clone> IndexMut<Id> for Vertex<V, E> {
+    fn index_mut(&mut self, id: Id) -> &mut E {
+        self.adj.index_mut(id)
+    }
+}
+
+impl<'a, V, E> IntoIterator for &'a Vertex<V, E> {
+    type Item = adj::IterItem<'a, E>;
+    type IntoIter = adj::Iter<'a, E>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.adj.into_iter()
+    }
+}

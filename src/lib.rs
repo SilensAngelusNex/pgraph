@@ -7,14 +7,13 @@
 // except according to those terms.
 
 extern crate rpds;
-mod id;
 mod graph;
+mod id;
 
-pub use id::Id;
-pub use graph::Graph;
-pub use graph::vertex::Vertex;
 pub use graph::vertex::adj::Edge;
-
+pub use graph::vertex::Vertex;
+pub use graph::Graph;
+pub use id::Id;
 
 #[cfg(test)]
 mod tests;

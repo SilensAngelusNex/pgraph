@@ -31,7 +31,7 @@ fn test_remove() {
     g.connect_mut(&v3, &v2, 32);
     g.connect_mut(&v4, &v1, 41);
     g.connect_mut(&v5, &v3, 53);
-    g.connect_mut(&v3, &v4, 34);    
+    g.connect_mut(&v3, &v4, 34);
 
     let mut h = g.connect(&v3, &v2, 32).unwrap();
 
