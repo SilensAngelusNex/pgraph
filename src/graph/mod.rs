@@ -25,6 +25,12 @@ impl<V, E> Clone for Graph<V, E> {
     }
 }
 
+impl<V, E> Default for Graph<V, E> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<V: Debug, E: Debug> Debug for Graph<V, E> {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         write!(f, "Graph (gen {}) {{", self.idgen.get_gen())?;
@@ -35,7 +41,7 @@ impl<V: Debug, E: Debug> Debug for Graph<V, E> {
             any_vertices = true;
         }
 
-        write!(f, "{}}}\n", if any_vertices { "\n" } else { "" })?;
+        writeln!(f, "{}}}", if any_vertices { "\n" } else { "" })?;
         Result::Ok(())
     }
 }
@@ -44,9 +50,8 @@ impl<V: Debug, E: Debug> Debug for Graph<V, E> {
 impl<V, E> Graph<V, E> {
     fn find_empty(&self) -> Option<usize> {
         for (i, v) in self.guts.iter().enumerate() {
-            match v {
-                None => return Some(i),
-                _ => (),
+            if v.is_none() {
+                return Some(i);
             }
         }
         None
@@ -227,11 +232,10 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         changed
     }
 
-    fn remove_all_mut_no_inc<'a, I: IntoIterator<Item = &'a Id>>(&mut self, iter: I) -> bool {
-        let changed = iter
+    fn remove_all_mut_no_inc<'a, I: IntoIterator<Item = &'a Id>>(&mut self, iterable: I) -> bool {
+        iterable
             .into_iter()
-            .fold(false, |changed, id| self.remove_mut_no_inc(id) || changed);
-        changed
+            .fold(false, |changed, id| self.remove_mut_no_inc(id) || changed)
     }
 
     fn remove_mut_no_inc(&mut self, id: &Id) -> bool {
@@ -271,12 +275,12 @@ impl<V: Clone, E> IndexMut<Id> for Graph<V, E> {
     }
 }
 
+type GutsIter<'a, V, E> = <&'a GraphInternal<V, E> as IntoIterator>::IntoIter;
+type VertexDeref<'a, V, E> = fn(&'a Option<Vertex<V, E>>) -> Option<&'a Vertex<V, E>>;
+
 impl<'a, V, E> IntoIterator for &'a Graph<V, E> {
     type Item = &'a Vertex<V, E>;
-    type IntoIter = FilterMap<
-        <&'a GraphInternal<V, E> as IntoIterator>::IntoIter,
-        fn(&'a Option<Vertex<V, E>>) -> Option<&'a Vertex<V, E>>,
-    >;
+    type IntoIter = FilterMap<GutsIter<'a, V, E>, VertexDeref<'a, V, E>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.guts.iter().filter_map(|v_opt| v_opt.as_ref())

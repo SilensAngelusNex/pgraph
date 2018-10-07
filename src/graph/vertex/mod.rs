@@ -6,6 +6,7 @@ use std::ops::{Index, IndexMut};
 
 pub mod adj;
 
+/// 
 pub struct Vertex<V, E> {
     id: Id,
     data: V,

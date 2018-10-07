@@ -100,8 +100,8 @@ mod test {
         assert!(a1.generation < b1.generation);
         assert!(b1.generation < c1.generation);
 
-        assert!(a1 < b1);
-        assert!(b1 < c1);
+        assert!(a1.generation  < b1.generation );
+        assert!(b1.generation < c1.generation );
     }
 
     fn assert_same_index(id1: &Id, id2: &Id) {

@@ -10,7 +10,7 @@ fn test_add() {
     g.connect_mut(&v1, &v2, 12);
     g.connect_mut(&v2, &v3, 23);
 
-    let mut h = g.connect(&v3, &v2, 32).unwrap();
+    let mut h = g.connect(&v3, &v2, 32);
 
     println!("{:?}", g);
     println!("----------------\n\n\n");
@@ -33,7 +33,7 @@ fn test_remove() {
     g.connect_mut(&v5, &v3, 53);
     g.connect_mut(&v3, &v4, 34);
 
-    let mut h = g.connect(&v3, &v2, 32).unwrap();
+    let mut h = g.connect(&v3, &v2, 32);
 
     println!("{:?}", g);
     println!("----------------\n\n\n");

@@ -4,8 +4,10 @@ use std::fmt::{Debug, Error, Formatter};
 use std::iter::{FilterMap, IntoIterator};
 use std::ops::{Index, IndexMut};
 
+/// Contains the `Id` of the sink vertex and the weight
 pub type Edge<E> = (Id, E);
 
+/// Struct to manage a vertex's adjacencies without having to care about the vertex itself.
 pub(crate) struct AdjList<E> {
     edges: Vector<Option<Edge<E>>>,
 }
@@ -21,7 +23,7 @@ impl<E> Clone for AdjList<E> {
 
 impl<E: Debug> Debug for AdjList<E> {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        let mut iter = self.iter();
+        let mut iter = self.into_iter();
         match iter.next() {
             Some((id, weight)) => write!(f, "{:?}: {:?}", id, weight)?,
             None => write!(f, "None")?,
@@ -36,24 +38,31 @@ impl<E: Debug> Debug for AdjList<E> {
 }
 
 impl<E> AdjList<E> {
+    /// Creates a new, empty `AdjList`
     pub(crate) fn new() -> Self {
         AdjList {
             edges: Vector::new(),
         }
     }
 
+    /// Counts the number of neighbors.
+    /// 
+    /// Takes O(N) time where N is the maximum number of vertices that _have ever been_ in the graph.  
+    /// TODO: Store this if it comes up a lot?
     pub(crate) fn len(&self) -> usize {
-        self.edges.len()
+        self.into_iter().count()
     }
 
-    pub(crate) fn iter(&self) -> impl Iterator<Item = &Edge<E>> {
-        self.edges.iter().filter_map(|e| e.as_ref())
-    }
-
+    /// Returns true iff there exists an `Edge` that goes to `sink`.
+    /// 
+    /// Runs in O(1)
     pub(crate) fn has_edge(&self, sink: &Id) -> bool {
         self.get_edge(sink).is_some()
     }
 
+    /// Returns the `Edge` that goes to `sink`, or `None` if such an edge doesn't exist.
+    /// 
+    /// Runs in O(1)
     pub(crate) fn get_edge(&self, sink: &Id) -> Option<&E> {
         let e = self.edges.get(sink.into());
         if let Some(Some((id, weight))) = e {
@@ -67,6 +76,9 @@ impl<E> AdjList<E> {
         }
     }
 
+    /// Create an edge to `sink` with the given `weight`.
+    /// 
+    /// Worst case runs in O(N), where N is the maximum number of vertices *currently* in the graph. Amortized O(1).
     pub(crate) fn add_edge(&mut self, sink: &Id, weight: E) {
         let mut new_edges = self.edges.clone();
         while new_edges.len() <= sink.into() {
@@ -78,6 +90,9 @@ impl<E> AdjList<E> {
 }
 
 impl<E: Clone> AdjList<E> {
+    /// Gets a mutable reference to the weight of the edge that ends at `sink`, or `None` if no such edge exists.
+    /// 
+    /// Runs in O(1)
     pub(crate) fn get_edge_mut(&mut self, sink: &Id) -> Option<&mut E> {
         let e = self.edges.get_mut(sink.into());
         if let Some(Some((id, weight))) = e {
@@ -91,6 +106,8 @@ impl<E: Clone> AdjList<E> {
         }
     }
 
+    /// Deletes the edge that ends at `sink`. Returns false iff that edge didn't exist to begin with.
+    /// Runs in O(1)
     pub(crate) fn disconnect_edge(&mut self, sink: &Id) -> bool {
         let mut result = false;
         let e = self.edges.get_mut(sink.into());
@@ -112,8 +129,8 @@ impl<E: Clone> AdjList<E> {
 
 impl<E: PartialEq<F>, F> PartialEq<AdjList<F>> for AdjList<E> {
     fn eq(&self, other: &AdjList<F>) -> bool {
-        let mut iter1 = self.iter();
-        let mut iter2 = other.iter();
+        let mut iter1 = self.into_iter();
+        let mut iter2 = other.into_iter();
 
         let item1 = iter1.next();
         let item2 = iter2.next();
