@@ -76,7 +76,7 @@ impl<V, E> Graph<V, E> {
         self.try_get(id).is_some()
     }
 
-    fn get(&self, id: &Id) -> &Vertex<V, E> {
+    pub fn get(&self, id: &Id) -> &Vertex<V, E> {
         match self.guts.get(id.into()) {
             Some(Some(vertex)) if vertex.same_id(id) => vertex,
             Some(Some(_)) => panic!("The Id {:?} is of an invalid generation. It does not correspond to any vertices in this graph.", id),
@@ -85,7 +85,7 @@ impl<V, E> Graph<V, E> {
         }
     }
 
-    fn try_get(&self, id: &Id) -> Option<&Vertex<V, E>> {
+    pub fn try_get(&self, id: &Id) -> Option<&Vertex<V, E>> {
         match self.guts.get(id.into()) {
             Some(Some(vertex)) if vertex.same_id(id) => Some(vertex),
             _ => None,
