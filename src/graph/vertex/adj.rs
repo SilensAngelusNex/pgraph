@@ -2,7 +2,7 @@ use id::Id;
 use rpds::Vector;
 use std::fmt::{Debug, Error, Formatter};
 use std::iter::{FilterMap, IntoIterator};
-use std::ops::{Index, IndexMut};
+use std::ops::Index;
 
 /// Contains the `Id` of the sink vertex and the weight
 pub type Edge<E> = (Id, E);
@@ -46,7 +46,7 @@ impl<E> AdjList<E> {
     }
 
     /// Counts the number of neighbors.
-    /// 
+    ///
     /// Takes O(N) time where N is the maximum number of vertices that _have ever been_ in the graph.  
     /// TODO: Store this if it comes up a lot?
     pub(crate) fn len(&self) -> usize {
@@ -54,14 +54,14 @@ impl<E> AdjList<E> {
     }
 
     /// Returns true iff there exists an `Edge` that goes to `sink`.
-    /// 
+    ///
     /// Runs in O(1)
     pub(crate) fn has_edge(&self, sink: &Id) -> bool {
         self.get_edge(sink).is_some()
     }
 
     /// Returns the `Edge` that goes to `sink`, or `None` if such an edge doesn't exist.
-    /// 
+    ///
     /// Runs in O(1)
     pub(crate) fn get_edge(&self, sink: &Id) -> Option<&E> {
         let e = self.edges.get(sink.into());
@@ -77,7 +77,7 @@ impl<E> AdjList<E> {
     }
 
     /// Create an edge to `sink` with the given `weight`.
-    /// 
+    ///
     /// Worst case runs in O(N), where N is the maximum number of vertices *currently* in the graph. Amortized O(1).
     pub(crate) fn add_edge(&mut self, sink: &Id, weight: E) {
         let mut new_edges = self.edges.clone();
@@ -91,7 +91,7 @@ impl<E> AdjList<E> {
 
 impl<E: Clone> AdjList<E> {
     /// Gets a mutable reference to the weight of the edge that ends at `sink`, or `None` if no such edge exists.
-    /// 
+    ///
     /// Runs in O(1)
     pub(crate) fn get_edge_mut(&mut self, sink: &Id) -> Option<&mut E> {
         let e = self.edges.get_mut(sink.into());
@@ -107,6 +107,7 @@ impl<E: Clone> AdjList<E> {
     }
 
     /// Deletes the edge that ends at `sink`. Returns false iff that edge didn't exist to begin with.
+    ///
     /// Runs in O(1)
     pub(crate) fn disconnect_edge(&mut self, sink: &Id) -> bool {
         let mut result = false;
@@ -150,17 +151,11 @@ impl<E: PartialEq<F>, F> PartialEq<AdjList<F>> for AdjList<E> {
     }
 }
 
-impl<E> Index<Id> for AdjList<E> {
+impl<'a, E> Index<&'a Id> for AdjList<E> {
     type Output = E;
 
-    fn index(&self, id: Id) -> &E {
+    fn index(&self, id: &'a Id) -> &E {
         self.get_edge(&id).unwrap()
-    }
-}
-
-impl<E: Clone> IndexMut<Id> for AdjList<E> {
-    fn index_mut(&mut self, id: Id) -> &mut E {
-        self.get_edge_mut(&id).unwrap()
     }
 }
 

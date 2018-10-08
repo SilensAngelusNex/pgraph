@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Error, Formatter};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Id {
     index: usize,
     generation: usize,
@@ -16,6 +16,17 @@ impl<'a> Into<usize> for &'a Id {
 impl Debug for Id {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         write!(f, "{} gen{}", self.index, self.generation)
+    }
+}
+
+#[cfg(test)]
+impl Id {
+    pub(crate) fn same_gen(&self, other: &Id) -> bool {
+        self.generation == other.generation
+    }
+
+    pub(crate) fn get_gen(&self) -> usize {
+        self.generation
     }
 }
 
@@ -100,8 +111,8 @@ mod test {
         assert!(a1.generation < b1.generation);
         assert!(b1.generation < c1.generation);
 
-        assert!(a1.generation  < b1.generation );
-        assert!(b1.generation < c1.generation );
+        assert!(a1.generation < b1.generation);
+        assert!(b1.generation < c1.generation);
     }
 
     fn assert_same_index(id1: &Id, id2: &Id) {

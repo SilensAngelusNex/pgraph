@@ -2,11 +2,11 @@ use self::adj::AdjList;
 use id::Id;
 use std::fmt::{Debug, Error, Formatter};
 use std::iter::IntoIterator;
-use std::ops::{Index, IndexMut};
+use std::ops::Index;
 
 pub mod adj;
 
-/// 
+///
 pub struct Vertex<V, E> {
     id: Id,
     data: V,
@@ -81,17 +81,11 @@ impl<V, E: Clone> Vertex<V, E> {
     }
 }
 
-impl<V, E> Index<Id> for Vertex<V, E> {
+impl<'a, V, E> Index<&'a Id> for Vertex<V, E> {
     type Output = E;
 
-    fn index(&self, id: Id) -> &E {
+    fn index(&self, id: &'a Id) -> &E {
         self.adj.index(id)
-    }
-}
-
-impl<V, E: Clone> IndexMut<Id> for Vertex<V, E> {
-    fn index_mut(&mut self, id: Id) -> &mut E {
-        self.adj.index_mut(id)
     }
 }
 

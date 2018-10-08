@@ -2,9 +2,10 @@ use self::vertex::adj::Edge;
 use self::vertex::Vertex;
 use id::{Id, IdGen};
 use rpds::Vector;
+use std::collections::HashMap;
 use std::fmt::{Debug, Error, Formatter};
 use std::iter::{FilterMap, IntoIterator};
-use std::ops::{Index, IndexMut};
+use std::ops::Index;
 
 pub mod vertex;
 
@@ -48,6 +49,11 @@ impl<V: Debug, E: Debug> Debug for Graph<V, E> {
 
 // helpers
 impl<V, E> Graph<V, E> {
+    #[cfg(test)]
+    pub(crate) fn get_gen(&self) -> usize {
+        self.idgen.get_gen()
+    }
+
     fn find_empty(&self) -> Option<usize> {
         for (i, v) in self.guts.iter().enumerate() {
             if v.is_none() {
@@ -55,13 +61,6 @@ impl<V, E> Graph<V, E> {
             }
         }
         None
-    }
-
-    fn get(&self, id: &Id) -> Option<&Vertex<V, E>> {
-        match self.guts.get(id.into()) {
-            Some(Some(vertex)) if vertex.same_id(id) => Some(vertex),
-            _ => None,
-        }
     }
 }
 
@@ -73,22 +72,50 @@ impl<V, E> Graph<V, E> {
         }
     }
 
+    pub fn has_vertex(&self, id: &Id) -> bool {
+        self.try_get(id).is_some()
+    }
+
+    fn get(&self, id: &Id) -> &Vertex<V, E> {
+        match self.guts.get(id.into()) {
+            Some(Some(vertex)) if vertex.same_id(id) => vertex,
+            Some(Some(_)) => panic!("The Id {:?} is of an invalid generation. It does not correspond to any vertices in this graph.", id),
+            Some(None) => panic!("No vertex found for Id {:?}. It has likely been removed from the graph.", id),
+            None => panic!("No vertex found for Id {:?}. It comes from another graph family.", id),
+        }
+    }
+
+    fn try_get(&self, id: &Id) -> Option<&Vertex<V, E>> {
+        match self.guts.get(id.into()) {
+            Some(Some(vertex)) if vertex.same_id(id) => Some(vertex),
+            _ => None,
+        }
+    }
+
+    pub fn get_data(&self, id: &Id) -> &V {
+        self.index(id).get_data()
+    }
+
+    pub fn try_get_data(&self, id: &Id) -> Option<&V> {
+        self.try_get(id).map(|v| v.get_data())
+    }
+
+    pub fn has_edge(&self, source: &Id, sink: &Id) -> bool {
+        self.try_get(source).map_or(false, |v| v.is_connected(sink))
+    }
+
+    pub fn get_edge(&self, source: &Id, sink: &Id) -> &E {
+        self.index(source).index(sink)
+    }
+
+    pub fn try_get_edge(&self, source: &Id, sink: &Id) -> Option<&E> {
+        self.try_get(source).and_then(|v| v.get_cost(sink))
+    }
+
     pub fn add(&self, vertex: V) -> (Self, Id) {
         let mut result = self.clone();
         let id = result.add_mut(vertex);
         (result, id)
-    }
-
-    pub fn get_data(&self, id: &Id) -> Option<&V> {
-        self.get(id).map(|v| v.get_data())
-    }
-
-    pub fn get_edge(&self, source: &Id, sink: &Id) -> Option<&E> {
-        self.get(source).and_then(|v| v.get_cost(sink))
-    }
-
-    pub fn has_vertex(&self, id: &Id) -> bool {
-        self.get(id).is_some()
     }
 
     pub fn add_mut(&mut self, vertex: V) -> Id {
@@ -106,32 +133,36 @@ impl<V, E> Graph<V, E> {
         }
     }
 
-    pub fn ids(&self) -> Vec<Id> {
-        self.guts
-            .iter()
-            .filter_map(|v_opt| match v_opt {
-                Some(v) => Some(*v.get_id()),
-                None => None,
-            }).collect()
+    pub fn ids(&self) -> impl Iterator<Item = &Id> {
+        self.guts.iter().filter_map(|v_opt| match v_opt {
+            Some(v) => Some(v.get_id()),
+            None => None,
+        })
     }
 
-    pub fn vertices_with_edge_to(&self, sink: &Id) -> Vec<Id> {
-        self.guts
-            .iter()
-            .filter_map(|v_opt| match v_opt {
-                Some(v) if v.is_connected(sink) => Some(*v.get_id()),
-                _ => None,
-            }).collect()
+    pub fn vertices_with_edge_to(&self, sink: &Id) -> impl Iterator<Item = &Id> {
+        let sink = *sink;
+        self.guts.iter().filter_map(move |v_opt| match v_opt {
+            Some(v) if v.is_connected(&sink) => Some(v.get_id()),
+            _ => None,
+        })
     }
 
-    pub fn neighbors(&self, source: &Id) -> Option<impl Iterator<Item = &Edge<E>>> {
-        self.get(source).map(|v| v.into_iter())
+    pub fn neighbors(&self, source: &Id) -> impl Iterator<Item = &Edge<E>> {
+        self.try_get(source)
+            .map(|v| v.into_iter())
+            .into_iter()
+            .flatten()
     }
 }
 
 impl<V: Clone, E> Graph<V, E> {
-    pub fn get_data_mut(&mut self, id: &Id) -> Option<&mut V> {
-        self.get_mut(id).map(|v| v.get_data_mut())
+    pub fn get_data_mut(&mut self, id: &Id) -> &mut V {
+        self.get_mut(id).get_data_mut()
+    }
+
+    pub fn try_get_data_mut(&mut self, id: &Id) -> Option<&mut V> {
+        self.try_get_mut(id).map(|v| v.get_data_mut())
     }
 
     pub fn connect(&self, source: &Id, sink: &Id, edge: E) -> Self {
@@ -142,15 +173,19 @@ impl<V: Clone, E> Graph<V, E> {
 
     pub fn try_connect(&self, source: &Id, sink: &Id, edge: E) -> Option<Self> {
         let mut result = self.clone();
-        if result.connect_mut(source, sink, edge) {
+        if result.try_connect_mut(source, sink, edge) {
             Some(result)
         } else {
             None
         }
     }
 
-    pub fn connect_mut(&mut self, source: &Id, sink: &Id, edge: E) -> bool {
-        if let Some(v) = self.get_mut(source) {
+    pub fn connect_mut(&mut self, source: &Id, sink: &Id, edge: E) {
+        self.get_mut(source).connect_to(sink, edge)
+    }
+
+    pub fn try_connect_mut(&mut self, source: &Id, sink: &Id, edge: E) -> bool {
+        if let Some(v) = self.try_get_mut(source) {
             v.connect_to(sink, edge);
             true
         } else {
@@ -158,7 +193,16 @@ impl<V: Clone, E> Graph<V, E> {
         }
     }
 
-    fn get_mut(&mut self, id: &Id) -> Option<&mut Vertex<V, E>> {
+    pub fn get_mut(&mut self, id: &Id) -> &mut Vertex<V, E> {
+        match self.guts.get_mut(id.into()) {
+            Some(Some(vertex)) if vertex.same_id(id) => vertex,
+            Some(Some(_)) => panic!("The Id {:?} is of an invalid generation. It does not correspond to any vertices in this graph", id),
+            Some(None) => panic!("No vertex found for Id {:?}. It has likely been removed from the graph.", id),
+            None => panic!("No vertex found for Id {:?}. It comes from another graph family.", id),
+        }
+    }
+
+    pub fn try_get_mut(&mut self, id: &Id) -> Option<&mut Vertex<V, E>> {
         match self.guts.get_mut(id.into()) {
             Some(Some(vertex)) if vertex.same_id(id) => Some(vertex),
             _ => None,
@@ -167,8 +211,27 @@ impl<V: Clone, E> Graph<V, E> {
 }
 
 impl<V: Clone, E: Clone> Graph<V, E> {
+    pub fn recreate(&self) -> Self {
+        let mut result = Self::new();
+        let mut ids = HashMap::new();
+        for v in self {
+            ids.insert(v.get_id(), result.add_mut(v.get_data().clone()));
+        }
+
+        for source in self {
+            for (sink, weight) in source {
+                result.connect_mut(&ids[source.get_id()], &ids[sink], weight.clone())
+            }
+        }
+        result
+    }
+
     pub fn get_edge_mut(&mut self, source: &Id, sink: &Id) -> Option<&mut E> {
-        self.get_mut(source).and_then(|v| v.get_cost_mut(sink))
+        self.get_mut(source).get_cost_mut(sink)
+    }
+
+    pub fn try_get_edge_mut(&mut self, source: &Id, sink: &Id) -> Option<&mut E> {
+        self.try_get_mut(source).and_then(|v| v.get_cost_mut(sink))
     }
 
     pub fn remove(&self, id: &Id) -> Self {
@@ -249,29 +312,27 @@ impl<V: Clone, E: Clone> Graph<V, E> {
     }
 
     pub fn disconnect_mut(&mut self, source: &Id, sink: &Id) -> bool {
-        self.get_mut(source).map_or(false, |v| v.disconnect(sink))
+        self.get_mut(source).disconnect(sink)
+    }
+
+    pub fn try_disconnect_mut(&mut self, source: &Id, sink: &Id) -> bool {
+        self.try_get_mut(source)
+            .map_or(false, |v| v.disconnect(sink))
     }
 
     fn disconnect_all_inc_mut(&mut self, sink: &Id) -> bool {
-        self.vertices_with_edge_to(sink)
-            .iter()
-            .fold(false, |init, source| {
-                self.disconnect_mut(source, sink) || init
-            })
+        let inc: Vec<Id> = self.vertices_with_edge_to(sink).cloned().collect();
+        inc.into_iter().fold(false, |init, source| {
+            self.disconnect_mut(&source, sink) || init
+        })
     }
 }
 
-impl<V, E> Index<Id> for Graph<V, E> {
+impl<'a, V, E> Index<&'a Id> for Graph<V, E> {
     type Output = Vertex<V, E>;
 
-    fn index(&self, id: Id) -> &Vertex<V, E> {
-        self.get(&id).unwrap()
-    }
-}
-
-impl<V: Clone, E> IndexMut<Id> for Graph<V, E> {
-    fn index_mut(&mut self, id: Id) -> &mut Vertex<V, E> {
-        self.get_mut(&id).unwrap()
+    fn index(&self, id: &'a Id) -> &Vertex<V, E> {
+        self.get(&id)
     }
 }
 
