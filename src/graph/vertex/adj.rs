@@ -2,7 +2,7 @@ use id::Id;
 use rpds::Vector;
 use std::fmt::{Debug, Error, Formatter};
 use std::iter::{FilterMap, IntoIterator};
-use std::ops::{ Index, IndexMut };
+use std::ops::{Index, IndexMut};
 
 /// Contains the `Id` of the sink vertex and the weight
 pub type Edge<E> = (Id, E);
@@ -160,7 +160,6 @@ impl<'a, E> Index<&'a Id> for AdjList<E> {
 }
 
 impl<'a, E: Clone> IndexMut<&'a Id> for AdjList<E> {
-
     fn index_mut(&mut self, id: &'a Id) -> &mut E {
         self.get_edge_mut(id).unwrap()
     }

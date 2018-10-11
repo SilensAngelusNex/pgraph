@@ -5,7 +5,7 @@ use rpds::Vector;
 use std::collections::HashMap;
 use std::fmt::{Debug, Error, Formatter};
 use std::iter::{FilterMap, IntoIterator};
-use std::ops::{ Index, IndexMut };
+use std::ops::{Index, IndexMut};
 
 pub mod vertex;
 

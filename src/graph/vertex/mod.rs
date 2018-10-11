@@ -2,7 +2,7 @@ use self::adj::AdjList;
 use id::Id;
 use std::fmt::{Debug, Error, Formatter};
 use std::iter::IntoIterator;
-use std::ops::{ Index, IndexMut };
+use std::ops::{Index, IndexMut};
 
 pub mod adj;
 
@@ -90,7 +90,6 @@ impl<'a, V, E> Index<&'a Id> for Vertex<V, E> {
 }
 
 impl<'a, V, E: Clone> IndexMut<&'a Id> for Vertex<V, E> {
-
     fn index_mut(&mut self, id: &'a Id) -> &mut E {
         self.adj.index_mut(id)
     }
