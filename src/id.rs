@@ -21,10 +21,6 @@ impl Debug for Id {
 
 #[cfg(test)]
 impl Id {
-    pub(crate) fn same_gen(&self, other: &Id) -> bool {
-        self.generation == other.generation
-    }
-
     pub(crate) fn get_gen(&self) -> usize {
         self.generation
     }

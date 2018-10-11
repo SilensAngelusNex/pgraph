@@ -5,7 +5,7 @@ use rpds::Vector;
 use std::collections::HashMap;
 use std::fmt::{Debug, Error, Formatter};
 use std::iter::{FilterMap, IntoIterator};
-use std::ops::Index;
+use std::ops::{ Index, IndexMut };
 
 pub mod vertex;
 
@@ -93,7 +93,7 @@ impl<V, E> Graph<V, E> {
     }
 
     pub fn get_data(&self, id: &Id) -> &V {
-        self.index(id).get_data()
+        self.get(id).get_data()
     }
 
     pub fn try_get_data(&self, id: &Id) -> Option<&V> {
@@ -105,7 +105,7 @@ impl<V, E> Graph<V, E> {
     }
 
     pub fn get_edge(&self, source: &Id, sink: &Id) -> &E {
-        self.index(source).index(sink)
+        self.get(source).index(sink)
     }
 
     pub fn try_get_edge(&self, source: &Id, sink: &Id) -> Option<&E> {
@@ -329,10 +329,16 @@ impl<V: Clone, E: Clone> Graph<V, E> {
 }
 
 impl<'a, V, E> Index<&'a Id> for Graph<V, E> {
-    type Output = Vertex<V, E>;
+    type Output = V;
 
-    fn index(&self, id: &'a Id) -> &Vertex<V, E> {
-        self.get(&id)
+    fn index(&self, id: &'a Id) -> &V {
+        self.get(id).get_data()
+    }
+}
+
+impl<'a, V: Clone, E> IndexMut<&'a Id> for Graph<V, E> {
+    fn index_mut(&mut self, id: &'a Id) -> &mut V {
+        self.get_mut(id).get_data_mut()
     }
 }
 
