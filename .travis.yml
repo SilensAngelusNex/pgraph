@@ -45,4 +45,5 @@ after_success:
   sudo make install &&
   cd ../.. &&
   rm -rf kcov-master &&
-  ./tools/codecov.sh
+  ./tools/codecov.sh &&
+  bash <(curl -s https://codecov.io/bash)
