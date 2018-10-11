@@ -32,19 +32,19 @@ install:
 script:
   - ./tools/check.sh
 
-# TODO Do not build kcov when version >= 34 is available in the official repositories.
 after_success:
   test $TRAVIS_OS_NAME = linux
   && test $TRAVIS_RUST_VERSION = stable
-  && wget https://github.com/SimonKagstrom/kcov/archive/v36.tar.gz
-  && tar xf v36.tar.gz
-  && cd kcov-36
-  && mkdir build
-  && cd build
-  && cmake ..
-  && make
-  && sudo make install
-  && cd ../../
-  && rm -rf kcov-36 v36.tar.gz
-  && travis_wait ./tools/codecov.sh
-  && bash <(curl -s https://codecov.io/bash)
+  wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
+  tar xzf master.tar.gz &&
+  cd kcov-master &&
+  mkdir build &&
+  cd build &&
+  cmake .. &&
+  make &&
+  make install &&
+  cd ../.. &&
+  rm -rf kcov-master &&
+  for file in target/debug/pgraph-*[^\.d]; do mkdir -p "target/cov/$(basename $file)"; kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; done &&
+  bash <(curl -s https://codecov.io/bash) &&
+  echo "Uploaded code coverage"
