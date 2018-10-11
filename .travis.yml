@@ -42,7 +42,7 @@ after_success:
   cd build &&
   cmake .. &&
   make &&
-  make install &&
+  sudo make install &&
   cd ../.. &&
   rm -rf kcov-master &&
   for file in target/debug/pgraph-*[^\.d]; do mkdir -p "target/cov/$(basename $file)"; kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; done &&
