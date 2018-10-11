@@ -33,8 +33,8 @@ script:
   - ./tools/check.sh
 
 after_success:
-  test $TRAVIS_OS_NAME = linux
-  && test $TRAVIS_RUST_VERSION = stable
+  test $TRAVIS_OS_NAME = linux &&
+  test $TRAVIS_RUST_VERSION = stable &&
   wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
   tar xzf master.tar.gz &&
   cd kcov-master &&
