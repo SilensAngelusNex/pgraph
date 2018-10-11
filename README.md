@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/SilensAngelusNex/pgraph.svg?branch=master)](https://travis-ci.com/SilensAngelusNex/pgraph) [![codecov](https://codecov.io/gh/SilensAngelusNex/pgraph/branch/master/graph/badge.svg)](https://codecov.io/gh/SilensAngelusNex/pgraph)
+
 # PGraph
 
 PGraph provides a persistent graph data structure with the following features:
