@@ -81,7 +81,7 @@ impl<V, E> Graph<V, E> {
             Some(Some(vertex)) if vertex.same_id(id) => vertex,
             Some(Some(_)) => panic!("The Id {:?} is of an invalid generation. It does not correspond to any vertices in this graph.", id),
             Some(None) => panic!("No vertex found for Id {:?}. It has likely been removed from the graph.", id),
-            None => panic!("No vertex found for Id {:?}. It comes from another graph family.", id),
+            None => panic!("No vertex found for Id {:?}. The Id either comes from a chlid or another graph family.", id),
         }
     }
 
@@ -218,7 +218,7 @@ impl<V: Clone, E> Graph<V, E> {
             Some(Some(vertex)) if vertex.same_id(id) => vertex,
             Some(Some(_)) => panic!("The Id {:?} is of an invalid generation. It does not correspond to any vertices in this graph", id),
             Some(None) => panic!("No vertex found for Id {:?}. It has likely been removed from the graph.", id),
-            None => panic!("No vertex found for Id {:?}. It comes from another graph family.", id),
+            None => panic!("No vertex found for Id {:?}. The Id either comes from a chlid or another graph family.", id),
         }
     }
 

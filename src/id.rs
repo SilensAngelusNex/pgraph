@@ -98,7 +98,7 @@ mod test {
         let b_gen = b.get_gen();
         let c_gen = c.get_gen();
 
-        println!("a = {},  b = {}, c = {}", a_gen, b_gen, c_gen);
+        println!("Generators and ids:\n\ta = {} -> {:?}, \tb = {} -> {:?}, \tc = {} -> {:?}", a_gen, a_first, b_gen, c_first, c_gen, c_first);
 
         let a1 = a.create_id(1);
         let b1 = b.create_id(1);

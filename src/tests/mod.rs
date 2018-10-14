@@ -40,6 +40,66 @@ fn test_connect() {
 }
 
 #[test]
+#[should_panic]
+fn test_get_panic1() {
+    let (_, a) = create_vertices();
+    let (b_ids, _) = create_vertices();
+
+    assert!(a.try_get(&b_ids[0]).is_none());
+    a.get(&b_ids[0]);
+}
+
+#[test]
+#[should_panic]
+fn test_get_panic2() {
+    let (ids, mut g) = create_vertices();
+    g.remove_mut(&ids[0]);
+
+    assert!(g.try_get(&ids[0]).is_none());
+    g.get(&ids[0]);
+}
+
+#[test]
+#[should_panic]
+fn test_get_panic3() {
+    let (_, a) = create_vertices();
+    let (_, id) = a.add(5);
+
+    assert!(a.try_get(&id).is_none());
+    a.get(&id);
+}
+
+#[test]
+#[should_panic]
+fn test_get_mut_panic1() {
+    let (_, mut a) = create_vertices();
+    let (b_ids, _) = create_vertices();
+
+    assert!(a.try_get_mut(&b_ids[0]).is_none());
+    a.get_mut(&b_ids[0]);
+}
+
+#[test]
+#[should_panic]
+fn test_get_mut_panic2() {
+    let (ids, mut g) = create_vertices();
+    g.remove_mut(&ids[0]);
+
+    assert!(g.try_get_mut(&ids[0]).is_none());
+    g.get_mut(&ids[0]);
+}
+
+#[test]
+#[should_panic]
+fn test_get_mut_panic3() {
+    let (_, mut a) = create_vertices();
+    let (_, id) = a.add(5);
+
+    assert!(a.try_get_mut(&id).is_none());
+    a.get_mut(&id);
+}
+
+#[test]
 fn test_remove() {
     let v = 2; // Vertex to check
     let (ids, mut g) = create_vertices();
