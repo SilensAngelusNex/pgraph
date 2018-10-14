@@ -154,8 +154,7 @@ impl<V, E> Graph<V, E> {
             .filter_map(|v_opt| match v_opt {
                 Some(v) => Some(v.into_iter()),
                 None => None,
-            })
-            .flatten()
+            }).flatten()
             .map(|(_, weight)| weight);
         x
     }
