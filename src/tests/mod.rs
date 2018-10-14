@@ -41,25 +41,26 @@ fn test_connect() {
 
 #[test]
 fn test_remove() {
-    let mut g = Graph::new();
-    let v1 = g.add_mut(1);
-    let v2 = g.add_mut(2);
-    let v3 = g.add_mut(3);
-    let v4 = g.add_mut(4);
-    let v5 = g.add_mut(5);
+    let v = 2; // Vertex to check
+    let (ids, mut g) = create_vertices();
+    add_edges(&ids, &mut g);
+    let v_id = &ids[v - 1];
 
-    g.connect_mut(&v1, &v2, 12);
-    g.connect_mut(&v2, &v3, 23);
-    g.connect_mut(&v3, &v2, 32);
-    g.connect_mut(&v4, &v1, 41);
-    g.connect_mut(&v5, &v3, 53);
-    g.connect_mut(&v3, &v4, 34);
+    g.remove_mut(v_id);
 
-    let h = g.connect(&v3, &v2, 32);
+    assert!(g.iter_data().fold(true, |result, w| result && w != &v));
+    assert!(
+        g.iter_weights()
+            .fold(true, |result, w| result && w % 10 != v && w / 10 != v)
+    );
 
-    println!("{:?}", g);
-    println!("----------------\n\n\n");
-    println!("{:?}", h);
+    let new_id = g.add_mut(6);
+
+    let old_v = g.try_get(v_id);
+    let new_v = g.try_get(&new_id);
+
+    assert!(old_v.is_none());
+    assert!(new_v.is_some());
 }
 
 fn create_vertices() -> (Vec<Id>, Graph<usize, usize>) {

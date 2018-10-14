@@ -140,6 +140,25 @@ impl<V, E> Graph<V, E> {
         })
     }
 
+    pub fn iter_data(&self) -> impl Iterator<Item = &V> {
+        self.guts.iter().filter_map(|v_opt| match v_opt {
+            Some(v) => Some(v.get_data()),
+            None => None,
+        })
+    }
+
+    pub fn iter_weights(&self) -> impl Iterator<Item = &E> {
+        let x = self
+            .guts
+            .iter()
+            .filter_map(|v_opt| match v_opt {
+                Some(v) => Some(v.into_iter()),
+                None => None,
+            }).flatten()
+            .map(|(_, weight)| weight);
+        x
+    }
+
     pub fn vertices_with_edge_to(&self, sink: &Id) -> impl Iterator<Item = &Id> {
         let sink = *sink;
         self.guts.iter().filter_map(move |v_opt| match v_opt {
