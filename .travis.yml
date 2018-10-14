@@ -23,7 +23,10 @@ addons:
       - jq
 
 install:
-  - rustup component add rustfmt-preview
+  # needed for rustfmt
+  # TODO Remove when all features used in `.rustfmt.toml` are stable.
+  - rustup toolchain install nightly
+  - rustup component add --toolchain nightly rustfmt-preview
   - cargo install cargo-deadlinks
 
 script:

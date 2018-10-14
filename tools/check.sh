@@ -20,6 +20,6 @@ cargo bench -- --test
 cargo doc
 cargo deadlinks
 cargo package --allow-dirty
-cargo fmt -- --check
+cargo +nightly fmt -- --check
 
 exit 0
