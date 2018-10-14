@@ -24,7 +24,7 @@ fn test_connect() {
 
     for source in &g {
         for (sink, weight) in source {
-            let calc_weight = source.get_data() * 10 + g.get_data(sink);
+            let calc_weight = source.get_data() * 10 + g[(sink,)];
             assert_eq!(weight, &calc_weight);
         }
     }
@@ -32,8 +32,8 @@ fn test_connect() {
     for source in g.ids() {
         for sink in g.ids() {
             if g.has_edge(source, sink) {
-                let calc_weight = g.get_data(&source) * 10 + g.get_data(&sink);
-                assert_eq!(g.get_edge(source, sink), &calc_weight);
+                let calc_weight = g.get_data(source) * 10 + g[sink].get_data();
+                assert_eq!(g[(source, sink)], calc_weight);
             }
         }
     }

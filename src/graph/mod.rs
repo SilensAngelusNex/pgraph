@@ -226,8 +226,8 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         result
     }
 
-    pub fn get_edge_mut(&mut self, source: &Id, sink: &Id) -> Option<&mut E> {
-        self.get_mut(source).get_cost_mut(sink)
+    pub fn get_edge_mut(&mut self, source: &Id, sink: &Id) -> &mut E {
+        self.get_mut(source).index_mut(sink)
     }
 
     pub fn try_get_edge_mut(&mut self, source: &Id, sink: &Id) -> Option<&mut E> {
@@ -329,16 +329,40 @@ impl<V: Clone, E: Clone> Graph<V, E> {
 }
 
 impl<'a, V, E> Index<&'a Id> for Graph<V, E> {
-    type Output = V;
+    type Output = Vertex<V, E>;
 
-    fn index(&self, id: &'a Id) -> &V {
-        self.get(id).get_data()
+    fn index(&self, id: &'a Id) -> &Vertex<V, E> {
+        self.get(id)
     }
 }
 
-impl<'a, V: Clone, E> IndexMut<&'a Id> for Graph<V, E> {
-    fn index_mut(&mut self, id: &'a Id) -> &mut V {
-        self.get_mut(id).get_data_mut()
+impl<'a, V, E> Index<(&'a Id,)> for Graph<V, E> {
+    type Output = V;
+
+    fn index(&self, id: (&'a Id,)) -> &V {
+        self.get(id.0).get_data()
+    }
+}
+
+impl<'a, V: Clone, E> IndexMut<(&'a Id,)> for Graph<V, E> {
+    fn index_mut(&mut self, id: (&'a Id,)) -> &mut V {
+        self.get_mut(id.0).get_data_mut()
+    }
+}
+
+impl<'a, V, E> Index<(&'a Id, &'a Id)> for Graph<V, E> {
+    type Output = E;
+
+    fn index(&self, ids: (&'a Id, &'a Id)) -> &E {
+        let (source, sink) = ids;
+        self.get_edge(source, sink)
+    }
+}
+
+impl<'a, V: Clone, E: Clone> IndexMut<(&'a Id, &'a Id)> for Graph<V, E> {
+    fn index_mut(&mut self, ids: (&'a Id, &'a Id)) -> &mut E {
+        let (source, sink) = ids;
+        self.get_edge_mut(source, sink)
     }
 }
 
