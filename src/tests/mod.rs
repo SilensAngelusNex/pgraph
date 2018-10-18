@@ -128,7 +128,6 @@ fn test_try_get_mut() {
     *g.try_get_data_mut(v_id).unwrap() *= 2;
 
     assert_eq!(g[(v_id,)], v * 4);
-
 }
 
 #[test]
