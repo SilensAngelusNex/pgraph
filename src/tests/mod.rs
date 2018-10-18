@@ -12,6 +12,25 @@ fn test_add_vertices() {
 }
 
 #[test]
+fn test_try_get() {
+    let (a_ids, mut a) = create_vertices();
+    let (b_ids, _) = create_vertices();
+    add_edges(&a_ids, &mut a);
+
+    for id in a_ids {
+        assert!(a.try_get_data(&id).is_some());
+        for (sink, _) in a.neighbors(&id) {
+            assert!(a.try_get_edge(&id, &sink).is_some());
+        }
+    }
+
+    for id in b_ids {
+        assert!(a.try_get_data(&id).is_none());
+        assert!(a.neighbors(&id).next().is_none());
+    }
+}
+
+#[test]
 fn test_connect() {
     let (ids, mut g) = create_vertices();
     add_edges(&ids, &mut g);
