@@ -119,6 +119,16 @@ fn test_get_mut_panic3() {
 }
 
 #[test]
+fn test_try_get_mut() {
+    let v = 2; // Vertex to check
+    let (ids, mut g) = create_vertices();
+    let v_id = &ids[v - 1];
+
+    let mut x = 5;
+    x *= 4;
+}
+
+#[test]
 fn test_remove() {
     let v = 2; // Vertex to check
     let (ids, mut g) = create_vertices();
@@ -144,7 +154,7 @@ fn test_remove() {
 }
 
 fn create_vertices() -> (Vec<Id>, Graph<usize, usize>) {
-    let mut graph = Graph::new();
+    let mut graph = Graph::default();
     let mut vec = Vec::new();
 
     vec.push(graph.add_mut(1));
