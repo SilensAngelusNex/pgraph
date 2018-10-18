@@ -126,6 +126,7 @@ fn test_remove() {
     let v_id = &ids[v - 1];
 
     g.remove_mut(v_id);
+    assert!(g.ids().count() < ids.len());
 
     assert!(g.iter_data().fold(true, |result, w| result && w != &v));
     assert!(
