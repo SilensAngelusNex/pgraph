@@ -124,8 +124,11 @@ fn test_try_get_mut() {
     let (ids, mut g) = create_vertices();
     let v_id = &ids[v - 1];
 
-    let mut x = 5;
-    x *= 4;
+    *g.get_data_mut(v_id) *= 2;
+    *g.try_get_data_mut(v_id).unwrap() *= 2;
+
+    assert_eq!(g[(v_id,)], v * 4);
+
 }
 
 #[test]
