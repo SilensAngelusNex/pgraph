@@ -95,7 +95,7 @@ fn test_get_mut_panic1() {
     let (b_ids, _) = create_vertices();
 
     assert!(a.get_mut(&b_ids[0]).is_none());
-    &a[&b_ids[0]];
+    &mut a[&b_ids[0]];
 }
 
 #[test]
@@ -105,7 +105,7 @@ fn test_get_mut_panic2() {
     g.remove_mut(&ids[0]);
 
     assert!(g.get_mut(&ids[0]).is_none());
-    &g[&ids[0]];
+    &mut g[&ids[0]];
 }
 
 #[test]
@@ -115,7 +115,7 @@ fn test_get_mut_panic3() {
     let (_, id) = a.add(5);
 
     assert!(a.get_mut(&id).is_none());
-    &a[&id];
+    &mut a[&id];
 }
 
 #[test]
