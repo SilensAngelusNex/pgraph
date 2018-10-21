@@ -73,43 +73,43 @@ impl<V, E> Graph<V, E> {
     }
 
     pub fn has_vertex(&self, id: &Id) -> bool {
-        self.try_get(id).is_some()
+        self.get(id).is_some()
     }
 
-    pub fn get(&self, id: &Id) -> &Vertex<V, E> {
-        match self.guts.get(id.into()) {
-            Some(Some(vertex)) if vertex.same_id(id) => vertex,
-            Some(Some(_)) => panic!("The Id {:?} is of an invalid generation. It does not correspond to any vertices in this graph.", id),
-            Some(None) => panic!("No vertex found for Id {:?}. It has likely been removed from the graph.", id),
-            None => panic!("No vertex found for Id {:?}. The Id either comes from a chlid or another graph family.", id),
-        }
-    }
+    // pub fn get(&self, id: &Id) -> &Vertex<V, E> {
+    //     match self.guts.get(id.into()) {
+    //         Some(Some(vertex)) if vertex.same_id(id) => vertex,
+    //         Some(Some(_)) => panic!("The Id {:?} is of an invalid generation. It does not correspond to any vertices in this graph.", id),
+    //         Some(None) => panic!("No vertex found for Id {:?}. It has likely been removed from the graph.", id),
+    //         None => panic!("No vertex found for Id {:?}. The Id either comes from a chlid or another graph family.", id),
+    //     }
+    // }
 
-    pub fn try_get(&self, id: &Id) -> Option<&Vertex<V, E>> {
+    pub fn get(&self, id: &Id) -> Option<&Vertex<V, E>> {
         match self.guts.get(id.into()) {
             Some(Some(vertex)) if vertex.same_id(id) => Some(vertex),
             _ => None,
         }
     }
 
-    pub fn get_data(&self, id: &Id) -> &V {
-        self.get(id).get_data()
-    }
+    // pub fn get_data(&self, id: &Id) -> &V {
+    //     self.get(id).get_data()
+    // }
 
-    pub fn try_get_data(&self, id: &Id) -> Option<&V> {
-        self.try_get(id).map(|v| v.get_data())
+    pub fn get_data(&self, id: &Id) -> Option<&V> {
+        self.get(id).map(|v| v.get_data())
     }
 
     pub fn has_edge(&self, source: &Id, sink: &Id) -> bool {
-        self.try_get(source).map_or(false, |v| v.is_connected(sink))
+        self.get(source).map_or(false, |v| v.is_connected(sink))
     }
 
-    pub fn get_edge(&self, source: &Id, sink: &Id) -> &E {
-        self.get(source).index(sink)
-    }
+    // pub fn get_edge(&self, source: &Id, sink: &Id) -> &E {
+    //     self.get(source).index(sink)
+    // }
 
-    pub fn try_get_edge(&self, source: &Id, sink: &Id) -> Option<&E> {
-        self.try_get(source).and_then(|v| v.get_cost(sink))
+    pub fn get_edge(&self, source: &Id, sink: &Id) -> Option<&E> {
+        self.get(source).and_then(|v| v.get_cost(sink))
     }
 
     pub fn add(&self, vertex: V) -> (Self, Id) {
@@ -148,16 +148,14 @@ impl<V, E> Graph<V, E> {
     }
 
     pub fn iter_weights(&self) -> impl Iterator<Item = &E> {
-        let x = self
-            .guts
+        self.guts
             .iter()
             .filter_map(|v_opt| match v_opt {
                 Some(v) => Some(v.into_iter()),
                 None => None,
             })
             .flatten()
-            .map(|(_, weight)| weight);
-        x
+            .map(|(_, weight)| weight)
     }
 
     pub fn vertices_with_edge_to(&self, sink: &Id) -> impl Iterator<Item = &Id> {
@@ -169,7 +167,7 @@ impl<V, E> Graph<V, E> {
     }
 
     pub fn neighbors(&self, source: &Id) -> impl Iterator<Item = &Edge<E>> {
-        self.try_get(source)
+        self.get(source)
             .map(|v| v.into_iter())
             .into_iter()
             .flatten()
@@ -177,12 +175,12 @@ impl<V, E> Graph<V, E> {
 }
 
 impl<V: Clone, E> Graph<V, E> {
-    pub fn get_data_mut(&mut self, id: &Id) -> &mut V {
-        self.get_mut(id).get_data_mut()
-    }
+    // pub fn get_data_mut(&mut self, id: &Id) -> &mut V {
+    //     self.get_mut(id).get_data_mut()
+    // }
 
-    pub fn try_get_data_mut(&mut self, id: &Id) -> Option<&mut V> {
-        self.try_get_mut(id).map(|v| v.get_data_mut())
+    pub fn get_data_mut(&mut self, id: &Id) -> Option<&mut V> {
+        self.get_mut(id).map(|v| v.get_data_mut())
     }
 
     pub fn connect(&self, source: &Id, sink: &Id, edge: E) -> Self {
@@ -192,8 +190,9 @@ impl<V: Clone, E> Graph<V, E> {
     }
 
     pub fn try_connect(&self, source: &Id, sink: &Id, edge: E) -> Option<Self> {
-        let mut result = self.clone();
-        if result.try_connect_mut(source, sink, edge) {
+        if self.has_vertex(source) && self.has_vertex(sink) {
+            let mut result = self.clone();
+            result.connect_mut(source, sink, edge);
             Some(result)
         } else {
             None
@@ -201,28 +200,29 @@ impl<V: Clone, E> Graph<V, E> {
     }
 
     pub fn connect_mut(&mut self, source: &Id, sink: &Id, edge: E) {
-        self.get_mut(source).connect_to(sink, edge)
+        self[source].connect_to(sink, edge)
     }
 
     pub fn try_connect_mut(&mut self, source: &Id, sink: &Id, edge: E) -> bool {
-        if let Some(v) = self.try_get_mut(source) {
-            v.connect_to(sink, edge);
-            true
-        } else {
-            false
-        }
+        if self.has_vertex(sink) {
+            if let Some(v) = self.get_mut(source) {
+                v.connect_to(sink, edge);
+                return true;
+            }
+        };
+        false
     }
 
-    pub fn get_mut(&mut self, id: &Id) -> &mut Vertex<V, E> {
-        match self.guts.get_mut(id.into()) {
-            Some(Some(vertex)) if vertex.same_id(id) => vertex,
-            Some(Some(_)) => panic!("The Id {:?} is of an invalid generation. It does not correspond to any vertices in this graph", id),
-            Some(None) => panic!("No vertex found for Id {:?}. It has likely been removed from the graph.", id),
-            None => panic!("No vertex found for Id {:?}. The Id either comes from a chlid or another graph family.", id),
-        }
-    }
+    // pub fn get_mut(&mut self, id: &Id) -> &mut Vertex<V, E> {
+    //     match self.guts.get_mut(id.into()) {
+    //         Some(Some(vertex)) if vertex.same_id(id) => vertex,
+    //         Some(Some(_)) => panic!("The Id {:?} is of an invalid generation. It does not correspond to any vertices in this graph", id),
+    //         Some(None) => panic!("No vertex found for Id {:?}. It has likely been removed from the graph.", id),
+    //         None => panic!("No vertex found for Id {:?}. The Id either comes from a chlid or another graph family.", id),
+    //     }
+    // }
 
-    pub fn try_get_mut(&mut self, id: &Id) -> Option<&mut Vertex<V, E>> {
+    pub fn get_mut(&mut self, id: &Id) -> Option<&mut Vertex<V, E>> {
         match self.guts.get_mut(id.into()) {
             Some(Some(vertex)) if vertex.same_id(id) => Some(vertex),
             _ => None,
@@ -246,12 +246,12 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         result
     }
 
-    pub fn get_edge_mut(&mut self, source: &Id, sink: &Id) -> &mut E {
-        self.get_mut(source).index_mut(sink)
-    }
+    // pub fn get_edge_mut(&mut self, source: &Id, sink: &Id) -> &mut E {
+    //     self.get_mut(source).index_mut(sink)
+    // }
 
-    pub fn try_get_edge_mut(&mut self, source: &Id, sink: &Id) -> Option<&mut E> {
-        self.try_get_mut(source).and_then(|v| v.get_cost_mut(sink))
+    pub fn get_edge_mut(&mut self, source: &Id, sink: &Id) -> Option<&mut E> {
+        self.get_mut(source).and_then(|v| v.get_cost_mut(sink))
     }
 
     pub fn remove(&self, id: &Id) -> Self {
@@ -332,12 +332,11 @@ impl<V: Clone, E: Clone> Graph<V, E> {
     }
 
     pub fn disconnect_mut(&mut self, source: &Id, sink: &Id) -> bool {
-        self.get_mut(source).disconnect(sink)
+        self[source].disconnect(sink)
     }
 
     pub fn try_disconnect_mut(&mut self, source: &Id, sink: &Id) -> bool {
-        self.try_get_mut(source)
-            .map_or(false, |v| v.disconnect(sink))
+        self.get_mut(source).map_or(false, |v| v.disconnect(sink))
     }
 
     fn disconnect_all_inc_mut(&mut self, sink: &Id) -> bool {
@@ -352,7 +351,23 @@ impl<'a, V, E> Index<&'a Id> for Graph<V, E> {
     type Output = Vertex<V, E>;
 
     fn index(&self, id: &'a Id) -> &Vertex<V, E> {
-        self.get(id)
+        match self.guts.get(id.into()) {
+            Some(Some(vertex)) if vertex.same_id(id) => vertex,
+            Some(Some(_)) => panic!("The Id {:?} is of an invalid generation. It does not correspond to any vertices in this graph.", id),
+            Some(None) => panic!("No vertex found for Id {:?}. It has likely been removed from the graph.", id),
+            None => panic!("No vertex found for Id {:?}. The Id either comes from a chlid or another graph family.", id),
+        }
+    }
+}
+
+impl<'a, V: Clone, E> IndexMut<&'a Id> for Graph<V, E> {
+    fn index_mut(&mut self, id: &'a Id) -> &mut Vertex<V, E> {
+        match self.guts.get_mut(id.into()) {
+            Some(Some(vertex)) if vertex.same_id(id) => vertex,
+            Some(Some(_)) => panic!("The Id {:?} is of an invalid generation. It does not correspond to any vertices in this graph", id),
+            Some(None) => panic!("No vertex found for Id {:?}. It has likely been removed from the graph.", id),
+            None => panic!("No vertex found for Id {:?}. The Id either comes from a chlid or another graph family.", id),
+        }
     }
 }
 
@@ -360,13 +375,13 @@ impl<'a, V, E> Index<(&'a Id,)> for Graph<V, E> {
     type Output = V;
 
     fn index(&self, id: (&'a Id,)) -> &V {
-        self.get(id.0).get_data()
+        self[id.0].get_data()
     }
 }
 
 impl<'a, V: Clone, E> IndexMut<(&'a Id,)> for Graph<V, E> {
     fn index_mut(&mut self, id: (&'a Id,)) -> &mut V {
-        self.get_mut(id.0).get_data_mut()
+        self[id.0].get_data_mut()
     }
 }
 
@@ -375,14 +390,14 @@ impl<'a, V, E> Index<(&'a Id, &'a Id)> for Graph<V, E> {
 
     fn index(&self, ids: (&'a Id, &'a Id)) -> &E {
         let (source, sink) = ids;
-        self.get_edge(source, sink)
+        self[source].index(sink)
     }
 }
 
 impl<'a, V: Clone, E: Clone> IndexMut<(&'a Id, &'a Id)> for Graph<V, E> {
     fn index_mut(&mut self, ids: (&'a Id, &'a Id)) -> &mut E {
         let (source, sink) = ids;
-        self.get_edge_mut(source, sink)
+        self[source].index_mut(sink)
     }
 }
 

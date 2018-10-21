@@ -6,26 +6,26 @@ fn test_add_vertices() {
     let gen = g.get_gen();
 
     for (i, id) in v.into_iter().enumerate() {
-        assert_eq!(*g.get_data(&id), i + 1);
+        assert_eq!(g[(&id,)], i + 1);
         assert_eq!(gen, id.get_gen());
     }
 }
 
 #[test]
-fn test_try_get() {
+fn test_get() {
     let (a_ids, mut a) = create_vertices();
     let (b_ids, _) = create_vertices();
     add_edges(&a_ids, &mut a);
 
     for id in a_ids {
-        assert!(a.try_get_data(&id).is_some());
+        assert!(a.get_data(&id).is_some());
         for (sink, _) in a.neighbors(&id) {
-            assert!(a.try_get_edge(&id, &sink).is_some());
+            assert!(a.get_edge(&id, &sink).is_some());
         }
     }
 
     for id in b_ids {
-        assert!(a.try_get_data(&id).is_none());
+        assert!(a.get_data(&id).is_none());
         assert!(a.neighbors(&id).next().is_none());
     }
 }
@@ -51,7 +51,7 @@ fn test_connect() {
     for source in g.ids() {
         for sink in g.ids() {
             if g.has_edge(source, sink) {
-                let calc_weight = g.get_data(source) * 10 + g[sink].get_data();
+                let calc_weight = g[(source,)] * 10 + g[sink].get_data();
                 assert_eq!(g[(source, sink)], calc_weight);
             }
         }
@@ -64,8 +64,8 @@ fn test_get_panic1() {
     let (_, a) = create_vertices();
     let (b_ids, _) = create_vertices();
 
-    assert!(a.try_get(&b_ids[0]).is_none());
-    a.get(&b_ids[0]);
+    assert!(a.get(&b_ids[0]).is_none());
+    &a[&b_ids[0]];
 }
 
 #[test]
@@ -74,8 +74,8 @@ fn test_get_panic2() {
     let (ids, mut g) = create_vertices();
     g.remove_mut(&ids[0]);
 
-    assert!(g.try_get(&ids[0]).is_none());
-    g.get(&ids[0]);
+    assert!(g.get(&ids[0]).is_none());
+    &g[&ids[0]];
 }
 
 #[test]
@@ -84,8 +84,8 @@ fn test_get_panic3() {
     let (_, a) = create_vertices();
     let (_, id) = a.add(5);
 
-    assert!(a.try_get(&id).is_none());
-    a.get(&id);
+    assert!(a.get(&id).is_none());
+    &a[&id];
 }
 
 #[test]
@@ -94,8 +94,8 @@ fn test_get_mut_panic1() {
     let (_, mut a) = create_vertices();
     let (b_ids, _) = create_vertices();
 
-    assert!(a.try_get_mut(&b_ids[0]).is_none());
-    a.get_mut(&b_ids[0]);
+    assert!(a.get_mut(&b_ids[0]).is_none());
+    &a[&b_ids[0]];
 }
 
 #[test]
@@ -104,8 +104,8 @@ fn test_get_mut_panic2() {
     let (ids, mut g) = create_vertices();
     g.remove_mut(&ids[0]);
 
-    assert!(g.try_get_mut(&ids[0]).is_none());
-    g.get_mut(&ids[0]);
+    assert!(g.get_mut(&ids[0]).is_none());
+    &g[&ids[0]];
 }
 
 #[test]
@@ -114,20 +114,21 @@ fn test_get_mut_panic3() {
     let (_, mut a) = create_vertices();
     let (_, id) = a.add(5);
 
-    assert!(a.try_get_mut(&id).is_none());
-    a.get_mut(&id);
+    assert!(a.get_mut(&id).is_none());
+    &a[&id];
 }
 
 #[test]
-fn test_try_get_mut() {
+fn test_get_mut() {
     let v = 2; // Vertex to check
     let (ids, mut g) = create_vertices();
     let v_id = &ids[v - 1];
 
-    *g.get_data_mut(v_id) *= 2;
-    *g.try_get_data_mut(v_id).unwrap() *= 2;
+    g[(v_id,)] *= 2;
+    *g.get_data_mut(v_id).unwrap() *= 2;
+    *g[v_id].get_data_mut() *= 2;
 
-    assert_eq!(g[(v_id,)], v * 4);
+    assert_eq!(g[(v_id,)], v * 8);
 }
 
 #[test]
@@ -149,8 +150,8 @@ fn test_remove() {
     assert!(g.ids().count() < ids.iter().count());
 
     let new_id = g.add_mut(6);
-    let old_v = g.try_get(v_id);
-    let new_v = g.try_get(&new_id);
+    let old_v = g.get(v_id);
+    let new_v = g.get(&new_id);
 
     assert!(old_v.is_none());
     assert!(new_v.is_some());
