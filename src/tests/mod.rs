@@ -114,8 +114,9 @@ fn test_remove() {
             .fold(true, |result, w| result && w % 10 != v && w / 10 != v)
     );
 
-    let new_id = g.add_mut(6);
+    assert!(g.ids().count() < ids.iter().count());
 
+    let new_id = g.add_mut(6);
     let old_v = g.try_get(v_id);
     let new_v = g.try_get(&new_id);
 
