@@ -76,25 +76,12 @@ impl<V, E> Graph<V, E> {
         self.get(id).is_some()
     }
 
-    // pub fn get(&self, id: &Id) -> &Vertex<V, E> {
-    //     match self.guts.get(id.into()) {
-    //         Some(Some(vertex)) if vertex.same_id(id) => vertex,
-    //         Some(Some(_)) => panic!("The Id {:?} is of an invalid generation. It does not correspond to any vertices in this graph.", id),
-    //         Some(None) => panic!("No vertex found for Id {:?}. It has likely been removed from the graph.", id),
-    //         None => panic!("No vertex found for Id {:?}. The Id either comes from a chlid or another graph family.", id),
-    //     }
-    // }
-
     pub fn get(&self, id: &Id) -> Option<&Vertex<V, E>> {
         match self.guts.get(id.into()) {
             Some(Some(vertex)) if vertex.same_id(id) => Some(vertex),
             _ => None,
         }
     }
-
-    // pub fn get_data(&self, id: &Id) -> &V {
-    //     self.get(id).get_data()
-    // }
 
     pub fn get_data(&self, id: &Id) -> Option<&V> {
         self.get(id).map(|v| v.get_data())
@@ -103,10 +90,6 @@ impl<V, E> Graph<V, E> {
     pub fn has_edge(&self, source: &Id, sink: &Id) -> bool {
         self.get(source).map_or(false, |v| v.is_connected(sink))
     }
-
-    // pub fn get_edge(&self, source: &Id, sink: &Id) -> &E {
-    //     self.get(source).index(sink)
-    // }
 
     pub fn get_edge(&self, source: &Id, sink: &Id) -> Option<&E> {
         self.get(source).and_then(|v| v.get_cost(sink))
@@ -175,9 +158,6 @@ impl<V, E> Graph<V, E> {
 }
 
 impl<V: Clone, E> Graph<V, E> {
-    // pub fn get_data_mut(&mut self, id: &Id) -> &mut V {
-    //     self.get_mut(id).get_data_mut()
-    // }
 
     pub fn get_data_mut(&mut self, id: &Id) -> Option<&mut V> {
         self.get_mut(id).map(|v| v.get_data_mut())
@@ -213,15 +193,6 @@ impl<V: Clone, E> Graph<V, E> {
         false
     }
 
-    // pub fn get_mut(&mut self, id: &Id) -> &mut Vertex<V, E> {
-    //     match self.guts.get_mut(id.into()) {
-    //         Some(Some(vertex)) if vertex.same_id(id) => vertex,
-    //         Some(Some(_)) => panic!("The Id {:?} is of an invalid generation. It does not correspond to any vertices in this graph", id),
-    //         Some(None) => panic!("No vertex found for Id {:?}. It has likely been removed from the graph.", id),
-    //         None => panic!("No vertex found for Id {:?}. The Id either comes from a chlid or another graph family.", id),
-    //     }
-    // }
-
     pub fn get_mut(&mut self, id: &Id) -> Option<&mut Vertex<V, E>> {
         match self.guts.get_mut(id.into()) {
             Some(Some(vertex)) if vertex.same_id(id) => Some(vertex),
@@ -245,10 +216,6 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         }
         result
     }
-
-    // pub fn get_edge_mut(&mut self, source: &Id, sink: &Id) -> &mut E {
-    //     self.get_mut(source).index_mut(sink)
-    // }
 
     pub fn get_edge_mut(&mut self, source: &Id, sink: &Id) -> Option<&mut E> {
         self.get_mut(source).and_then(|v| v.get_cost_mut(sink))

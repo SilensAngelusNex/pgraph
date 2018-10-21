@@ -14,7 +14,7 @@ To use rpds add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rpds = "<version>"
+pgraph = { git = "https://github.com/SilensAngelusNex/pgraph.git" }
 ```
 
 ## Usage
