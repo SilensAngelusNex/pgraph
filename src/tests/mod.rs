@@ -12,6 +12,25 @@ fn test_add_vertices() {
 }
 
 #[test]
+fn test_try_get() {
+    let (a_ids, mut a) = create_vertices();
+    let (b_ids, _) = create_vertices();
+    add_edges(&a_ids, &mut a);
+
+    for id in a_ids {
+        assert!(a.try_get_data(&id).is_some());
+        for (sink, _) in a.neighbors(&id) {
+            assert!(a.try_get_edge(&id, &sink).is_some());
+        }
+    }
+
+    for id in b_ids {
+        assert!(a.try_get_data(&id).is_none());
+        assert!(a.neighbors(&id).next().is_none());
+    }
+}
+
+#[test]
 fn test_connect() {
     let (ids, mut g) = create_vertices();
     add_edges(&ids, &mut g);
@@ -100,6 +119,18 @@ fn test_get_mut_panic3() {
 }
 
 #[test]
+fn test_try_get_mut() {
+    let v = 2; // Vertex to check
+    let (ids, mut g) = create_vertices();
+    let v_id = &ids[v - 1];
+
+    *g.get_data_mut(v_id) *= 2;
+    *g.try_get_data_mut(v_id).unwrap() *= 2;
+
+    assert_eq!(g[(v_id,)], v * 4);
+}
+
+#[test]
 fn test_remove() {
     let v = 2; // Vertex to check
     let (ids, mut g) = create_vertices();
@@ -107,6 +138,7 @@ fn test_remove() {
     let v_id = &ids[v - 1];
 
     g.remove_mut(v_id);
+    assert!(g.ids().count() < ids.len());
 
     assert!(g.iter_data().fold(true, |result, w| result && w != &v));
     assert!(
@@ -125,7 +157,7 @@ fn test_remove() {
 }
 
 fn create_vertices() -> (Vec<Id>, Graph<usize, usize>) {
-    let mut graph = Graph::new();
+    let mut graph = Graph::default();
     let mut vec = Vec::new();
 
     vec.push(graph.add_mut(1));
