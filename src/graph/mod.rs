@@ -158,7 +158,6 @@ impl<V, E> Graph<V, E> {
 }
 
 impl<V: Clone, E> Graph<V, E> {
-
     pub fn get_data_mut(&mut self, id: &Id) -> Option<&mut V> {
         self.get_mut(id).map(|v| v.get_data_mut())
     }
