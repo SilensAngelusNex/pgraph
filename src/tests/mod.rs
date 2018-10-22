@@ -84,10 +84,9 @@ fn test_remove() {
     assert!(g.ids().count() < ids.len());
 
     assert!(g.iter_data().fold(true, |result, w| result && w != &v));
-    assert!(
-        g.iter_weights()
-            .fold(true, |result, w| result && w % 10 != v && w / 10 != v)
-    );
+    assert!(g
+        .iter_weights()
+        .fold(true, |result, w| result && w % 10 != v && w / 10 != v));
 
     assert!(g.ids().count() < ids.iter().count());
 
