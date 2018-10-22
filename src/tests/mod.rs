@@ -1,5 +1,7 @@
 use super::*;
 
+mod panics;
+
 #[test]
 fn test_add_vertices() {
     let (v, g) = create_vertices();
@@ -31,7 +33,7 @@ fn test_get() {
 }
 
 #[test]
-fn test_connect() {
+fn test_connect_mut() {
     let (ids, mut g) = create_vertices();
     add_edges(&ids, &mut g);
 
@@ -56,66 +58,6 @@ fn test_connect() {
             }
         }
     }
-}
-
-#[test]
-#[should_panic]
-fn test_get_panic1() {
-    let (_, a) = create_vertices();
-    let (b_ids, _) = create_vertices();
-
-    assert!(a.get(&b_ids[0]).is_none());
-    &a[&b_ids[0]];
-}
-
-#[test]
-#[should_panic]
-fn test_get_panic2() {
-    let (ids, mut g) = create_vertices();
-    g.remove_mut(&ids[0]);
-
-    assert!(g.get(&ids[0]).is_none());
-    &g[&ids[0]];
-}
-
-#[test]
-#[should_panic]
-fn test_get_panic3() {
-    let (_, a) = create_vertices();
-    let (_, id) = a.add(5);
-
-    assert!(a.get(&id).is_none());
-    &a[&id];
-}
-
-#[test]
-#[should_panic]
-fn test_get_mut_panic1() {
-    let (_, mut a) = create_vertices();
-    let (b_ids, _) = create_vertices();
-
-    assert!(a.get_mut(&b_ids[0]).is_none());
-    &mut a[&b_ids[0]];
-}
-
-#[test]
-#[should_panic]
-fn test_get_mut_panic2() {
-    let (ids, mut g) = create_vertices();
-    g.remove_mut(&ids[0]);
-
-    assert!(g.get_mut(&ids[0]).is_none());
-    &mut g[&ids[0]];
-}
-
-#[test]
-#[should_panic]
-fn test_get_mut_panic3() {
-    let (_, mut a) = create_vertices();
-    let (_, id) = a.add(5);
-
-    assert!(a.get_mut(&id).is_none());
-    &mut a[&id];
 }
 
 #[test]
@@ -157,6 +99,35 @@ fn test_remove() {
     assert!(new_v.is_some());
 }
 
+#[test]
+fn test_connect() {
+    let (a_ids, mut a) = create_vertices();
+    let (b_ids, _) = create_vertices();
+
+    let c = a.connect(&a_ids[1], &a_ids[0], 6);
+    assert!(c.has_edge(&a_ids[1], &a_ids[0]));
+    assert_eq!(c[(&a_ids[1], &a_ids[0])], 6);
+
+    let c_opt = a.try_connect(&a_ids[1], &a_ids[0], 6);
+    assert!(c_opt.is_some());
+    let c = c_opt.unwrap();
+    assert!(c.has_edge(&a_ids[1], &a_ids[0]));
+    assert_eq!(c[(&a_ids[1], &a_ids[0])], 6);
+
+    let c_opt = a.try_connect(&a_ids[1], &b_ids[0], 6);
+    assert!(c_opt.is_none());
+
+    let c_opt = a.try_connect(&b_ids[1], &a_ids[0], 6);
+    assert!(c_opt.is_none());
+
+    assert!(!a.try_connect_mut(&a_ids[1], &b_ids[0], 6));
+    assert!(!a.try_connect_mut(&b_ids[1], &a_ids[0], 6));
+
+    assert!(a.try_connect_mut(&a_ids[1], &a_ids[0], 6));
+    assert!(a.has_edge(&a_ids[1], &a_ids[0]));
+    assert_eq!(a[(&a_ids[1], &a_ids[0])], 6);
+}
+
 fn create_vertices() -> (Vec<Id>, Graph<usize, usize>) {
     let mut graph = Graph::default();
     let mut vec = Vec::new();
@@ -173,6 +144,9 @@ fn add_edges(v: &[Id], graph: &mut Graph<usize, usize>) {
     graph.connect_mut(&v[0], &v[1], 12);
     graph.connect_mut(&v[1], &v[2], 23);
     graph.connect_mut(&v[2], &v[1], 32);
-    graph.connect_mut(&v[2], &v[3], 34);
-    graph.connect_mut(&v[3], &v[1], 42);
+
+    let a = graph.try_connect_mut(&v[2], &v[3], 34);
+    let b = graph.try_connect_mut(&v[3], &v[1], 42);
+
+    assert!(a && b);
 }

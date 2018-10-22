@@ -179,7 +179,14 @@ impl<V: Clone, E> Graph<V, E> {
     }
 
     pub fn connect_mut(&mut self, source: &Id, sink: &Id, edge: E) {
-        self[source].connect_to(sink, edge)
+        if self.has_vertex(sink) {
+            self[source].connect_to(sink, edge)
+        } else {
+            panic!(
+                "The sink vertex with Id {:?} was not found in the graph.",
+                sink
+            )
+        }
     }
 
     pub fn try_connect_mut(&mut self, source: &Id, sink: &Id, edge: E) -> bool {
