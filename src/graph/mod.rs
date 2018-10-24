@@ -240,13 +240,14 @@ impl<V: Clone, E: Clone> Graph<V, E> {
 
     pub fn remove(&self, id: &Id) -> Self {
         let mut result = self.clone();
-        result.remove_mut_no_inc(id);
+        result.try_remove_mut_no_inc(id);
         result
     }
 
     pub fn try_remove(&self, id: &Id) -> Option<Self> {
-        let mut result = self.clone();
-        if result.remove_mut_no_inc(id) {
+        if self.has_vertex(id) {
+            let mut result = self.clone();
+            result.remove_mut_no_inc(id);
             Some(result)
         } else {
             None
@@ -284,11 +285,13 @@ impl<V: Clone, E: Clone> Graph<V, E> {
     }
 
     pub fn remove_mut(&mut self, id: &Id) -> bool {
-        let changed = self.remove_mut_no_inc(id);
-        if changed {
+        if self.has_vertex(id) {
+            self.remove_mut_no_inc(id);
             self.idgen.next_gen();
-        };
-        changed
+            true
+        } else {
+            false
+        }
     }
 
     pub fn remove_all_mut<'a, I: IntoIterator<Item = &'a Id>>(&mut self, iter: I) -> bool {
@@ -299,20 +302,27 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         changed
     }
 
-    fn remove_all_mut_no_inc<'a, I: IntoIterator<Item = &'a Id>>(&mut self, iterable: I) -> bool {
-        iterable
-            .into_iter()
-            .fold(false, |changed, id| self.remove_mut_no_inc(id) || changed)
+    fn remove_all_mut_no_inc<'a, T: Into<&'a Id>, I: IntoIterator<Item = T>>(
+        &mut self,
+        iterable: I,
+    ) -> bool {
+        iterable.into_iter().fold(false, |changed, into_id| {
+            self.try_remove_mut_no_inc(into_id.into()) || changed
+        })
     }
 
-    fn remove_mut_no_inc(&mut self, id: &Id) -> bool {
+    fn try_remove_mut_no_inc(&mut self, id: &Id) -> bool {
         if self.has_vertex(id) {
-            self.guts.set_mut(id.into(), None);
-            self.disconnect_all_inc_mut(id);
+            self.remove_mut_no_inc(id);
             true
         } else {
             false
         }
+    }
+
+    fn remove_mut_no_inc(&mut self, id: &Id) {
+        self.guts.set_mut(id.into(), None);
+        self.disconnect_all_inc_mut(id);
     }
 
     pub fn disconnect_mut(&mut self, source: &Id, sink: &Id) -> bool {
