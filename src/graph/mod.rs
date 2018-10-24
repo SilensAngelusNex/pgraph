@@ -37,8 +37,11 @@ impl<V: Debug, E: Debug> Debug for Graph<V, E> {
         write!(f, "Graph (gen {}) {{", self.idgen.get_gen())?;
         let mut any_vertices = false;
 
-        for v in self {
-            write!(f, "\n\t{:?}", v)?;
+        for v_opt in self.guts.iter() {
+            match v_opt {
+                Some(v) => write!(f, "\n\t{:?}", v)?,
+                None => write!(f, "\n\tBlank")?,
+            }
             any_vertices = true;
         }
 
@@ -52,6 +55,14 @@ impl<V, E> Graph<V, E> {
     #[cfg(test)]
     pub(crate) fn get_gen(&self) -> usize {
         self.idgen.get_gen()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn count_empties(&self) -> usize {
+        self.guts
+            .iter()
+            .filter_map(|v_opt| if v_opt.is_none() { Some(()) } else { None })
+            .count()
     }
 
     fn find_empty(&self) -> Option<usize> {

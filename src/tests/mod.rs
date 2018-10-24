@@ -127,6 +127,35 @@ fn test_connect() {
     assert_eq!(a[(&a_ids[1], &a_ids[0])], 6);
 }
 
+#[test]
+fn test_recreate() {
+    let (a_ids, mut a) = create_vertices();
+    add_edges(&a_ids, &mut a);
+
+    let a = a.try_remove(&a_ids[2]).unwrap();
+    let mut a = a.remove(&a_ids[3]);
+    let added = a.add_mut(5);
+
+    a.remove_mut(&a_ids[1]);
+    a.connect_mut(&added, &a_ids[0], 51);
+    a.connect_mut(&a_ids[0], &added, 15);
+
+    let b = a.recreate();
+
+    for (a_id, b_id) in a.ids().zip(b.ids()) {
+        let a_v = &a[a_id];
+        let b_v = &b[b_id];
+
+        assert_eq!(a_v.get_data(), b_v.get_data());
+        for (a_sink, b_sink) in a.ids().zip(b.ids()) {
+            assert_eq!(a_v.get_cost(a_sink), b_v.get_cost(b_sink))
+        }
+    }
+
+    assert_ne!(a.count_empties(), 0);
+    assert_eq!(b.count_empties(), 0);
+}
+
 fn create_vertices() -> (Vec<Id>, Graph<usize, usize>) {
     let mut graph = Graph::default();
     let mut vec = Vec::new();
