@@ -80,8 +80,10 @@ fn test_remove() {
     add_edges(&ids, &mut g);
     let v_id = &ids[v - 1];
 
-    g.remove_mut(v_id);
-    assert!(g.ids().count() < ids.len());
+    assert!(g.remove_mut(v_id));
+    assert!(!g.remove_mut(v_id));
+
+    assert_eq!(g.ids().count() + 1, ids.len());
 
     assert!(g.iter_data().fold(true, |result, w| result && w != &v));
     assert!(g
@@ -165,9 +167,11 @@ fn test_edges() {
     add_edges(&b_ids, &mut b);
 
     let mut a = a.remove(&b_ids[0]);
+    assert!(a.try_remove(&b_ids[0]).is_none());
 
-    a[(&a_ids[0], &a_ids[1])] *= 2;
+    *a.get_edge_mut(&a_ids[0], &a_ids[1]).unwrap() *= 2;
     assert_eq!(b[(&b_ids[0], &b_ids[1])] * 2, a[(&a_ids[0], &a_ids[1])]);
+    assert!(a.get_edge_mut(&a_ids[0], &a_ids[0]).is_none());
 
     let c = b.disconnect(&b_ids[2], &b_ids[3]);
     assert!(b.has_edge(&b_ids[2], &b_ids[3]));
@@ -176,7 +180,11 @@ fn test_edges() {
     assert!(b.try_disconnect(&a_ids[2], &a_ids[3]).is_none());
     assert!(b.try_disconnect(&a_ids[2], &b_ids[3]).is_none());
     assert!(b.try_disconnect(&b_ids[2], &a_ids[3]).is_none());
+    assert!(b.try_disconnect(&b_ids[2], &b_ids[3]).is_some());
 
+    assert!(!b.try_disconnect_mut(&a_ids[2], &a_ids[3]));
+    assert!(!b.try_disconnect_mut(&b_ids[2], &a_ids[3]));
+    assert!(!b.try_disconnect_mut(&a_ids[2], &b_ids[3]));
     assert!(b.try_disconnect_mut(&b_ids[2], &b_ids[3]));
     assert!(!b.has_edge(&b_ids[2], &b_ids[3]));
 }
