@@ -156,6 +156,31 @@ fn test_recreate() {
     assert_eq!(b.count_empties(), 0);
 }
 
+#[test]
+fn test_edges() {
+    let (a_ids, mut a) = create_vertices();
+    add_edges(&a_ids, &mut a);
+
+    let (b_ids, mut b) = create_vertices();
+    add_edges(&b_ids, &mut b);
+
+    let mut a = a.remove(&b_ids[0]);
+
+    a[(&a_ids[0], &a_ids[1])] *= 2;
+    assert_eq!(b[(&b_ids[0], &b_ids[1])] * 2, a[(&a_ids[0], &a_ids[1])]);
+
+    let c = b.disconnect(&b_ids[2], &b_ids[3]);
+    assert!(b.has_edge(&b_ids[2], &b_ids[3]));
+    assert!(!c.has_edge(&b_ids[2], &b_ids[3]));
+
+    assert!(b.try_disconnect(&a_ids[2], &a_ids[3]).is_none());
+    assert!(b.try_disconnect(&a_ids[2], &b_ids[3]).is_none());
+    assert!(b.try_disconnect(&b_ids[2], &a_ids[3]).is_none());
+
+    assert!(b.try_disconnect_mut(&b_ids[2], &b_ids[3]));
+    assert!(!b.has_edge(&b_ids[2], &b_ids[3]));
+}
+
 fn create_vertices() -> (Vec<Id>, Graph<usize, usize>) {
     let mut graph = Graph::default();
     let mut vec = Vec::new();

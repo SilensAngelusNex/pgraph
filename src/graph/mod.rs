@@ -276,8 +276,9 @@ impl<V: Clone, E: Clone> Graph<V, E> {
     }
 
     pub fn try_disconnect(&self, source: &Id, sink: &Id) -> Option<Self> {
-        let mut result = self.clone();
-        if result.disconnect_mut(source, sink) {
+        if self.has_vertex(source) && self.has_vertex(sink) {
+            let mut result = self.clone();
+            result.disconnect_mut(source, sink);
             Some(result)
         } else {
             None
