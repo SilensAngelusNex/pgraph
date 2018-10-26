@@ -2,6 +2,7 @@ use self::vertex::adj::Edge;
 use self::vertex::Vertex;
 use id::{Id, IdGen};
 use rpds::Vector;
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt::{Debug, Error, Formatter};
 use std::iter::{FilterMap, IntoIterator};
@@ -180,10 +181,9 @@ impl<V: Clone, E> Graph<V, E> {
     }
 
     pub fn try_connect(&self, source: &Id, sink: &Id, edge: E) -> Option<Self> {
-        if self.has_vertex(source) && self.has_vertex(sink) {
-            let mut result = self.clone();
-            result.connect_mut(source, sink, edge);
-            Some(result)
+        let mut result = Cow::Borrowed(self);
+        if connect(&mut result, source, sink, edge) {
+            Some(result.into_owned())
         } else {
             None
         }
@@ -240,30 +240,29 @@ impl<V: Clone, E: Clone> Graph<V, E> {
 
     pub fn remove(&self, id: &Id) -> Self {
         let mut result = self.clone();
-        result.try_remove_mut_no_inc(id);
+        result.remove_mut(id);
         result
     }
 
     pub fn try_remove(&self, id: &Id) -> Option<Self> {
-        if self.has_vertex(id) {
-            let mut result = self.clone();
-            result.remove_mut_no_inc(id);
-            Some(result)
+        let mut result = Cow::Borrowed(self);
+        if remove(&mut result, id) {
+            Some(result.into_owned())
         } else {
             None
         }
     }
 
-    pub fn remove_all<'a, I: IntoIterator<Item = &'a Id>>(&self, iter: I) -> Self {
+    pub fn remove_all<'a, I: IntoIterator<Item = &'a Id>>(&self, iterable: I) -> Self {
         let mut result = self.clone();
-        result.remove_all_mut_no_inc(iter);
+        result.remove_all_mut(iterable);
         result
     }
 
-    pub fn try_remove_all<'a, I: IntoIterator<Item = &'a Id>>(&self, iter: I) -> Option<Self> {
-        let mut result = self.clone();
-        if result.remove_all_mut_no_inc(iter) {
-            Some(result)
+    pub fn try_remove_all<'a, I: IntoIterator<Item = &'a Id>>(&self, iterable: I) -> Option<Self> {
+        let mut result = Cow::Borrowed(self);
+        if remove_all(&mut result, iterable) {
+            Some(result.into_owned())
         } else {
             None
         }
@@ -276,10 +275,9 @@ impl<V: Clone, E: Clone> Graph<V, E> {
     }
 
     pub fn try_disconnect(&self, source: &Id, sink: &Id) -> Option<Self> {
-        if self.has_vertex(source) && self.has_vertex(sink) {
-            let mut result = self.clone();
-            result.disconnect_mut(source, sink);
-            Some(result)
+        let mut result = Cow::Borrowed(self);
+        if disconnect(&mut result, source, sink) {
+            Some(result.into_owned())
         } else {
             None
         }
@@ -393,6 +391,51 @@ impl<'a, V: Clone, E: Clone> IndexMut<(&'a Id, &'a Id)> for Graph<V, E> {
     fn index_mut(&mut self, ids: (&'a Id, &'a Id)) -> &mut E {
         let (source, sink) = ids;
         self[source].index_mut(sink)
+    }
+}
+
+fn remove<'a, V: Clone, E: Clone>(cow: &mut Cow<'a, Graph<V, E>>, id: &Id) -> bool {
+    if cow.has_vertex(id) {
+        cow.to_mut().remove_mut_no_inc(id);
+        true
+    } else {
+        false
+    }
+}
+
+fn remove_all<'a, 'b, V: Clone, E: Clone, T: Into<&'b Id>, I: IntoIterator<Item = T>>(
+    cow: &mut Cow<'a, Graph<V, E>>,
+    iterable: I,
+) -> bool {
+    iterable.into_iter().fold(false, |changed, into_id| {
+        remove(cow, into_id.into()) || changed
+    })
+}
+
+fn disconnect<'a, V: Clone, E: Clone>(
+    cow: &mut Cow<'a, Graph<V, E>>,
+    source: &Id,
+    sink: &Id,
+) -> bool {
+    if cow.has_vertex(source) && cow.has_vertex(sink) {
+        cow.to_mut().disconnect_mut(source, sink);
+        true
+    } else {
+        false
+    }
+}
+
+fn connect<'a, V: Clone, E>(
+    cow: &mut Cow<'a, Graph<V, E>>,
+    source: &Id,
+    sink: &Id,
+    weight: E,
+) -> bool {
+    if cow.has_vertex(source) && cow.has_vertex(sink) {
+        cow.to_mut().connect_mut(source, sink, weight);
+        true
+    } else {
+        false
     }
 }
 
