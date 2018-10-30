@@ -169,8 +169,9 @@ fn test_edges() {
     let mut a = a.remove(&b_ids[0]);
     assert!(a.try_remove(&b_ids[0]).is_none());
 
+    a[(&a_ids[0], &a_ids[1])] *= 2;
     *a.get_edge_mut(&a_ids[0], &a_ids[1]).unwrap() *= 2;
-    assert_eq!(b[(&b_ids[0], &b_ids[1])] * 2, a[(&a_ids[0], &a_ids[1])]);
+    assert_eq!(b[(&b_ids[0], &b_ids[1])] * 4, a[(&a_ids[0], &a_ids[1])]);
     assert!(a.get_edge_mut(&a_ids[0], &a_ids[0]).is_none());
 
     let c = b.disconnect(&b_ids[2], &b_ids[3]);

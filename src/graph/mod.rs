@@ -182,7 +182,8 @@ impl<V: Clone, E> Graph<V, E> {
 
     pub fn try_connect(&self, source: &Id, sink: &Id, edge: E) -> Option<Self> {
         let mut result = Cow::Borrowed(self);
-        if connect(&mut result, source, sink, edge) {
+        if result.has_vertex(source) && result.has_vertex(sink) {
+            result.to_mut().connect_mut(source, sink, edge);
             Some(result.into_owned())
         } else {
             None
@@ -276,7 +277,8 @@ impl<V: Clone, E: Clone> Graph<V, E> {
 
     pub fn try_disconnect(&self, source: &Id, sink: &Id) -> Option<Self> {
         let mut result = Cow::Borrowed(self);
-        if disconnect(&mut result, source, sink) {
+        if result.has_vertex(source) && result.has_vertex(sink) {
+            result.to_mut().disconnect_mut(source, sink);
             Some(result.into_owned())
         } else {
             None
@@ -410,33 +412,6 @@ fn remove_all<'a, 'b, V: Clone, E: Clone, T: Into<&'b Id>, I: IntoIterator<Item 
     iterable.into_iter().fold(false, |changed, into_id| {
         remove(cow, into_id.into()) || changed
     })
-}
-
-fn disconnect<'a, V: Clone, E: Clone>(
-    cow: &mut Cow<'a, Graph<V, E>>,
-    source: &Id,
-    sink: &Id,
-) -> bool {
-    if cow.has_vertex(source) && cow.has_vertex(sink) {
-        cow.to_mut().disconnect_mut(source, sink);
-        true
-    } else {
-        false
-    }
-}
-
-fn connect<'a, V: Clone, E>(
-    cow: &mut Cow<'a, Graph<V, E>>,
-    source: &Id,
-    sink: &Id,
-    weight: E,
-) -> bool {
-    if cow.has_vertex(source) && cow.has_vertex(sink) {
-        cow.to_mut().connect_mut(source, sink, weight);
-        true
-    } else {
-        false
-    }
 }
 
 type GutsIter<'a, V, E> = <&'a GraphInternal<V, E> as IntoIterator>::IntoIter;
