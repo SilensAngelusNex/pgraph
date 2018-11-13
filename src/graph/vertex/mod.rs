@@ -38,11 +38,11 @@ impl<V, E> Vertex<V, E> {
         &self.id
     }
 
-    pub fn get_cost(&self, sink: &Id) -> Option<&E> {
+    pub fn get_cost(&self, sink: Id) -> Option<&E> {
         self.adj.get_edge(sink)
     }
 
-    pub fn is_connected(&self, sink: &Id) -> bool {
+    pub fn is_connected(&self, sink: Id) -> bool {
         self.adj.has_edge(sink)
     }
 
@@ -62,35 +62,35 @@ impl<V, E> Vertex<V, E> {
         }
     }
 
-    pub(crate) fn same_id(&self, id: &Id) -> bool {
-        id == &self.id
+    pub(crate) fn same_id(&self, id: Id) -> bool {
+        id == self.id
     }
 
-    pub(crate) fn connect_to(&mut self, sink: &Id, weight: E) {
+    pub(crate) fn connect_to(&mut self, sink: Id, weight: E) {
         self.adj.add_edge(sink, weight)
     }
 }
 
 impl<V, E: Clone> Vertex<V, E> {
-    pub fn get_cost_mut(&mut self, sink: &Id) -> Option<&mut E> {
+    pub fn get_cost_mut(&mut self, sink: Id) -> Option<&mut E> {
         self.adj.get_edge_mut(sink)
     }
 
-    pub fn disconnect(&mut self, sink: &Id) -> bool {
+    pub fn disconnect(&mut self, sink: Id) -> bool {
         self.adj.disconnect_edge(sink)
     }
 }
 
-impl<'a, V, E> Index<&'a Id> for Vertex<V, E> {
+impl<'a, V, E> Index<Id> for Vertex<V, E> {
     type Output = E;
 
-    fn index(&self, id: &'a Id) -> &E {
+    fn index(&self, id: Id) -> &E {
         self.adj.index(id)
     }
 }
 
-impl<'a, V, E: Clone> IndexMut<&'a Id> for Vertex<V, E> {
-    fn index_mut(&mut self, id: &'a Id) -> &mut E {
+impl<'a, V, E: Clone> IndexMut<Id> for Vertex<V, E> {
+    fn index_mut(&mut self, id: Id) -> &mut E {
         self.adj.index_mut(id)
     }
 }

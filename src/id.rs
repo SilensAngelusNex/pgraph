@@ -7,22 +7,26 @@ pub struct Id {
     generation: usize,
 }
 
-impl<'a> Into<usize> for &'a Id {
-    fn into(self) -> usize {
-        self.index
-    }
-}
-
 impl Debug for Id {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         write!(f, "{} gen{}", self.index, self.generation)
     }
 }
 
-#[cfg(test)]
+impl<'a> From<&'a Id> for Id {
+    fn from(other: &'a Id) -> Self {
+        *other
+    }
+}
+
 impl Id {
+    #[cfg(test)]
     pub(crate) fn get_gen(&self) -> usize {
         self.generation
+    }
+
+    pub(crate) fn get_index(&self) -> usize {
+        self.index
     }
 }
 
@@ -115,8 +119,8 @@ mod test {
     }
 
     fn assert_same_index(id1: &Id, id2: &Id) {
-        let a: usize = id1.into();
-        let b: usize = id2.into();
+        let a: usize = id1.get_index();
+        let b: usize = id2.get_index();
 
         assert_eq!(a, b);
     }

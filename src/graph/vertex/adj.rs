@@ -56,17 +56,17 @@ impl<E> AdjList<E> {
     /// Returns true iff there exists an `Edge` that goes to `sink`.
     ///
     /// Runs in O(1)
-    pub(crate) fn has_edge(&self, sink: &Id) -> bool {
+    pub(crate) fn has_edge(&self, sink: Id) -> bool {
         self.get_edge(sink).is_some()
     }
 
     /// Returns the `Edge` that goes to `sink`, or `None` if such an edge doesn't exist.
     ///
     /// Runs in O(1)
-    pub(crate) fn get_edge(&self, sink: &Id) -> Option<&E> {
-        let e = self.edges.get(sink.into());
+    pub(crate) fn get_edge(&self, sink: Id) -> Option<&E> {
+        let e = self.edges.get(sink.get_index());
         if let Some(Some((id, weight))) = e {
-            if sink == id {
+            if sink == *id {
                 Some(weight)
             } else {
                 None
@@ -79,12 +79,12 @@ impl<E> AdjList<E> {
     /// Create an edge to `sink` with the given `weight`.
     ///
     /// Worst case runs in O(N), where N is the maximum number of vertices *currently* in the graph. Amortized O(1).
-    pub(crate) fn add_edge(&mut self, sink: &Id, weight: E) {
+    pub(crate) fn add_edge(&mut self, sink: Id, weight: E) {
         let mut new_edges = self.edges.clone();
-        while new_edges.len() <= sink.into() {
+        while new_edges.len() <= sink.get_index() {
             new_edges.push_back_mut(None);
         }
-        new_edges.set_mut(sink.into(), Some((*sink, weight)));
+        new_edges.set_mut(sink.get_index(), Some((sink, weight)));
         self.edges = new_edges;
     }
 }
@@ -93,10 +93,10 @@ impl<E: Clone> AdjList<E> {
     /// Gets a mutable reference to the weight of the edge that ends at `sink`, or `None` if no such edge exists.
     ///
     /// Runs in O(1)
-    pub(crate) fn get_edge_mut(&mut self, sink: &Id) -> Option<&mut E> {
-        let e = self.edges.get_mut(sink.into());
+    pub(crate) fn get_edge_mut(&mut self, sink: Id) -> Option<&mut E> {
+        let e = self.edges.get_mut(sink.get_index());
         if let Some(Some((id, weight))) = e {
-            if sink == id {
+            if sink == *id {
                 Some(weight)
             } else {
                 None
@@ -109,12 +109,12 @@ impl<E: Clone> AdjList<E> {
     /// Deletes the edge that ends at `sink`. Returns false iff that edge didn't exist to begin with.
     ///
     /// Runs in O(1)
-    pub(crate) fn disconnect_edge(&mut self, sink: &Id) -> bool {
+    pub(crate) fn disconnect_edge(&mut self, sink: Id) -> bool {
         let mut result = false;
-        let e = self.edges.get_mut(sink.into());
+        let e = self.edges.get_mut(sink.get_index());
         if let Some(edge) = e {
             let take = if let Some((id, _)) = edge {
-                sink == id
+                sink == *id
             } else {
                 false
             };
@@ -151,16 +151,16 @@ impl<E: PartialEq<F>, F> PartialEq<AdjList<F>> for AdjList<E> {
     }
 }
 
-impl<'a, E> Index<&'a Id> for AdjList<E> {
+impl<'a, E> Index<Id> for AdjList<E> {
     type Output = E;
 
-    fn index(&self, id: &'a Id) -> &E {
-        self.get_edge(&id).unwrap()
+    fn index(&self, id: Id) -> &E {
+        self.get_edge(id).unwrap()
     }
 }
 
-impl<'a, E: Clone> IndexMut<&'a Id> for AdjList<E> {
-    fn index_mut(&mut self, id: &'a Id) -> &mut E {
+impl<'a, E: Clone> IndexMut<Id> for AdjList<E> {
+    fn index_mut(&mut self, id: Id) -> &mut E {
         self.get_edge_mut(id).unwrap()
     }
 }

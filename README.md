@@ -3,14 +3,14 @@
 # PGraph
 
 PGraph provides a persistent graph data structure with the following features:
-* Generic over vertex values and edge weights
-* Directed edges
+* Supports optional data for vertices and edges (For example, `Graph<(), E>` has data on edges only.)
+* Directed edges, for that sweet, sweet versitility
 * Structural sharing built on [rpds](https://crates.io/crates/rpds) data structures
 * TODO: Common graph algorithms (Dijkstra's, Bellman-Ford, and Floyd-Warshall are the first ones I'm planning, but make an issue if there's another that you want.)
 
 ## Setup
 
-To use rpds add the following to your `Cargo.toml`:
+To use pgraph add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
