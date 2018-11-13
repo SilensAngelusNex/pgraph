@@ -259,7 +259,10 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         result
     }
 
-    pub fn try_remove_all<T: Into<Id>, I: IntoIterator<Item = T>>(&self, iterable: I) -> Option<Self> {
+    pub fn try_remove_all<T: Into<Id>, I: IntoIterator<Item = T>>(
+        &self,
+        iterable: I,
+    ) -> Option<Self> {
         let mut result = Cow::Borrowed(self);
         if remove_all(&mut result, iterable) {
             Some(result.into_owned())
