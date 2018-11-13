@@ -8,7 +8,7 @@ use std::ops::{Index, IndexMut};
 pub type Edge<E> = (Id, E);
 
 /// Struct to manage a vertex's adjacencies without having to care about the vertex itself.
-pub(crate) struct AdjList<E> {
+pub(super) struct AdjList<E> {
     edges: Vector<Option<Edge<E>>>,
 }
 
@@ -39,7 +39,7 @@ impl<E: Debug> Debug for AdjList<E> {
 
 impl<E> AdjList<E> {
     /// Creates a new, empty `AdjList`
-    pub(crate) fn new() -> Self {
+    pub(super) fn new() -> Self {
         AdjList {
             edges: Vector::new(),
         }
@@ -49,21 +49,21 @@ impl<E> AdjList<E> {
     ///
     /// Takes O(N) time where N is the maximum number of vertices that _have ever been_ in the graph.  
     /// TODO: Store this if it comes up a lot?
-    pub(crate) fn len(&self) -> usize {
+    pub(super) fn len(&self) -> usize {
         self.into_iter().count()
     }
 
     /// Returns true iff there exists an `Edge` that goes to `sink`.
     ///
     /// Runs in O(1)
-    pub(crate) fn has_edge(&self, sink: Id) -> bool {
+    pub(super) fn has_edge(&self, sink: Id) -> bool {
         self.get_edge(sink).is_some()
     }
 
     /// Returns the `Edge` that goes to `sink`, or `None` if such an edge doesn't exist.
     ///
     /// Runs in O(1)
-    pub(crate) fn get_edge(&self, sink: Id) -> Option<&E> {
+    pub(super) fn get_edge(&self, sink: Id) -> Option<&E> {
         let e = self.edges.get(sink.get_index());
         if let Some(Some((id, weight))) = e {
             if sink == *id {
@@ -79,7 +79,7 @@ impl<E> AdjList<E> {
     /// Create an edge to `sink` with the given `weight`.
     ///
     /// Worst case runs in O(N), where N is the maximum number of vertices *currently* in the graph. Amortized O(1).
-    pub(crate) fn add_edge(&mut self, sink: Id, weight: E) {
+    pub(super) fn add_edge(&mut self, sink: Id, weight: E) {
         let mut new_edges = self.edges.clone();
         while new_edges.len() <= sink.get_index() {
             new_edges.push_back_mut(None);
@@ -93,7 +93,7 @@ impl<E: Clone> AdjList<E> {
     /// Gets a mutable reference to the weight of the edge that ends at `sink`, or `None` if no such edge exists.
     ///
     /// Runs in O(1)
-    pub(crate) fn get_edge_mut(&mut self, sink: Id) -> Option<&mut E> {
+    pub(super) fn get_edge_mut(&mut self, sink: Id) -> Option<&mut E> {
         let e = self.edges.get_mut(sink.get_index());
         if let Some(Some((id, weight))) = e {
             if sink == *id {
@@ -109,7 +109,7 @@ impl<E: Clone> AdjList<E> {
     /// Deletes the edge that ends at `sink`. Returns false iff that edge didn't exist to begin with.
     ///
     /// Runs in O(1)
-    pub(crate) fn disconnect_edge(&mut self, sink: Id) -> bool {
+    pub(super) fn disconnect_edge(&mut self, sink: Id) -> bool {
         let mut result = false;
         let e = self.edges.get_mut(sink.get_index());
         if let Some(edge) = e {

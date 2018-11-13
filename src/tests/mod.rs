@@ -200,11 +200,49 @@ fn test_remove_all() {
     let c = a.remove_all(&a_ids);
     assert_eq!(c.into_iter().count(), 0);
 
+    let d = a.try_remove_all(&a_ids);
+    assert!(d.is_some());
+    let e = a.try_remove_all(&a_ids);
+    assert!(e.is_none());
+
     a.remove_all_mut(&b_ids);
     assert_eq!(a.into_iter().count(), a_count);
 
     a.remove_all_mut(&a_ids);
     assert_eq!(a.into_iter().count(), 0);
+}
+
+#[test]
+fn test_add_all() {
+    let vertices: Vec<usize> = vec![0, 1, 2, 3, 4];
+    let mut a = Graph::<usize, usize>::new();
+
+    let (b, b_ids) = a.add_all(vertices.clone());
+    let a_ids = a.add_all_mut(vertices);
+
+    for (i, (a_id, b_id)) in a_ids.into_iter().zip(b_ids).enumerate() {
+        assert_eq!(a[(a_id,)], i);
+        assert_eq!(b[(b_id,)], i);
+    }
+}
+
+#[test]
+fn test_debug() {
+    let (a_ids, mut a) = create_vertices();
+    add_edges(&a_ids, &mut a);
+
+    let result = format!("{:?}", a);
+    let expected = format!(
+        "{}\n{}\n{}\n{}\n{}\n{}\n",
+        "Graph (gen 0) {",
+        "\t1 (0 gen0) => (1 gen0: 12)",
+        "\t2 (1 gen0) => (2 gen0: 23)",
+        "\t3 (2 gen0) => (1 gen0: 32, 3 gen0: 34)",
+        "\t4 (3 gen0) => (1 gen0: 42)",
+        "}"
+    );
+
+    assert_eq!(result, expected);
 }
 
 fn create_vertices() -> (Vec<Id>, Graph<usize, usize>) {

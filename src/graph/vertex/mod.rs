@@ -54,7 +54,7 @@ impl<V, E> Vertex<V, E> {
         &mut self.data
     }
 
-    pub(crate) fn from(id: Id, data: V) -> Self {
+    pub(super) fn from(id: Id, data: V) -> Self {
         Vertex {
             id,
             data,
@@ -62,11 +62,11 @@ impl<V, E> Vertex<V, E> {
         }
     }
 
-    pub(crate) fn same_id(&self, id: Id) -> bool {
+    pub(super) fn same_id(&self, id: Id) -> bool {
         id == self.id
     }
 
-    pub(crate) fn connect_to(&mut self, sink: Id, weight: E) {
+    pub(super) fn connect_to(&mut self, sink: Id, weight: E) {
         self.adj.add_edge(sink, weight)
     }
 }

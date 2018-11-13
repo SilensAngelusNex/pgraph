@@ -21,7 +21,7 @@ impl<'a> From<&'a Id> for Id {
 
 impl Id {
     #[cfg(test)]
-    pub(crate) fn get_gen(&self) -> usize {
+    pub fn get_gen(&self) -> usize {
         self.generation
     }
 

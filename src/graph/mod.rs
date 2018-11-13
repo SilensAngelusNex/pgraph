@@ -54,12 +54,12 @@ impl<V: Debug, E: Debug> Debug for Graph<V, E> {
 // helpers
 impl<V, E> Graph<V, E> {
     #[cfg(test)]
-    pub(crate) fn get_gen(&self) -> usize {
+    pub fn get_gen(&self) -> usize {
         self.idgen.get_gen()
     }
 
     #[cfg(test)]
-    pub(crate) fn count_empties(&self) -> usize {
+    pub fn count_empties(&self) -> usize {
         self.guts
             .iter()
             .filter_map(|v_opt| if v_opt.is_none() { Some(()) } else { None })
@@ -126,6 +126,22 @@ impl<V, E> Graph<V, E> {
                 id
             }
         }
+    }
+
+    pub fn add_all<T: Into<V>, I: IntoIterator<Item = T>>(&self, vertices: I) -> (Self, Vec<Id>) {
+        let mut result = self.clone();
+        let ids = result.add_all_mut(vertices);
+        (result, ids)
+    }
+
+    ///
+    ///
+    /// TODO: Use batch insert when RPDS supports it.
+    pub fn add_all_mut<T: Into<V>, I: IntoIterator<Item = T>>(&mut self, vertices: I) -> Vec<Id> {
+        vertices
+            .into_iter()
+            .map(|v| self.add_mut(v.into()))
+            .collect()
     }
 
     pub fn ids(&self) -> impl Iterator<Item = &Id> {
