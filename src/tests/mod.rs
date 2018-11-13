@@ -202,7 +202,7 @@ fn test_remove_all() {
 
     let d = a.try_remove_all(&a_ids);
     assert!(d.is_some());
-    let e = a.try_remove_all(&a_ids);
+    let e = a.try_remove_all(&b_ids);
     assert!(e.is_none());
 
     a.remove_all_mut(&b_ids);
@@ -230,15 +230,16 @@ fn test_add_all() {
 fn test_debug() {
     let (a_ids, mut a) = create_vertices();
     add_edges(&a_ids, &mut a);
+    let gen = a.get_gen();
 
     let result = format!("{:?}", a);
     let expected = format!(
         "{}\n{}\n{}\n{}\n{}\n{}\n",
-        "Graph (gen 0) {",
-        "\t1 (0 gen0) => (1 gen0: 12)",
-        "\t2 (1 gen0) => (2 gen0: 23)",
-        "\t3 (2 gen0) => (1 gen0: 32, 3 gen0: 34)",
-        "\t4 (3 gen0) => (1 gen0: 42)",
+        format!("Graph (gen {}) {{", gen),
+        format!("\t1 (0 gen{}) => (1 gen{}: 12)", gen, gen),
+        format!("\t2 (1 gen{}) => (2 gen{}: 23)", gen, gen),
+        format!("\t3 (2 gen{}) => (1 gen{}: 32, 3 gen{}: 34)", gen, gen, gen),
+        format!("\t4 (3 gen{}) => (1 gen{}: 42)", gen, gen),
         "}"
     );
 
