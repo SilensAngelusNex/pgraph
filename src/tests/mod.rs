@@ -246,6 +246,23 @@ fn test_debug() {
     assert_eq!(result, expected);
 }
 
+#[test]
+fn test_get_edge_from_vertex() {
+    let (a_ids, mut a) = create_vertices();
+    let (b_ids, _) = create_vertices();
+    add_edges(&a_ids, &mut a);
+
+    let v0 = a.get_mut(a_ids[0]).unwrap();
+    assert_eq!(v0[a_ids[1]], 12);
+
+    assert!(v0.get_cost(b_ids[1]).is_none());
+    assert!(v0.get_cost_mut(b_ids[1]).is_none());
+    assert!(v0.get_cost_mut(a_ids[1]).is_some());
+
+    assert!(v0.disconnect(a_ids[1]));
+    assert!(!v0.disconnect(b_ids[1]));
+}
+
 fn create_vertices() -> (Vec<Id>, Graph<usize, usize>) {
     let mut graph = Graph::default();
     let mut vec = Vec::new();
