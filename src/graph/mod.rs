@@ -54,11 +54,13 @@ impl<V: Debug, E: Debug> Debug for Graph<V, E> {
 // helpers
 impl<V, E> Graph<V, E> {
     #[cfg(test)]
+    #[must_use]
     pub fn get_gen(&self) -> usize {
         self.idgen.get_gen()
     }
 
     #[cfg(test)]
+    #[must_use]
     pub fn count_empties(&self) -> usize {
         self.guts
             .iter()
@@ -66,6 +68,7 @@ impl<V, E> Graph<V, E> {
             .count()
     }
 
+    #[must_use]
     fn find_empty(&self) -> Option<usize> {
         for (i, v) in self.guts.iter().enumerate() {
             if v.is_none() {
@@ -77,6 +80,7 @@ impl<V, E> Graph<V, E> {
 }
 
 impl<V, E> Graph<V, E> {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             guts: GraphInternal::new(),
@@ -84,10 +88,12 @@ impl<V, E> Graph<V, E> {
         }
     }
 
+    #[must_use]
     pub fn has_vertex(&self, id: Id) -> bool {
         self.get(id).is_some()
     }
 
+    #[must_use]
     pub fn get(&self, id: Id) -> Option<&Vertex<V, E>> {
         match self.guts.get(id.get_index()) {
             Some(Some(vertex)) if vertex.same_id(id) => Some(vertex),
@@ -95,18 +101,22 @@ impl<V, E> Graph<V, E> {
         }
     }
 
+    #[must_use]
     pub fn get_data(&self, id: Id) -> Option<&V> {
         self.get(id).map(|v| v.get_data())
     }
 
+    #[must_use]
     pub fn has_edge(&self, source: Id, sink: Id) -> bool {
         self.get(source).map_or(false, |v| v.is_connected(sink))
     }
 
+    #[must_use]
     pub fn get_edge(&self, source: Id, sink: Id) -> Option<&E> {
         self.get(source).and_then(|v| v.get_cost(sink))
     }
 
+    #[must_use]
     pub fn add(&self, vertex: V) -> (Self, Id) {
         let mut result = self.clone();
         let id = result.add_mut(vertex);
@@ -128,6 +138,7 @@ impl<V, E> Graph<V, E> {
         }
     }
 
+    #[must_use]
     pub fn add_all<T: Into<V>, I: IntoIterator<Item = T>>(&self, vertices: I) -> (Self, Vec<Id>) {
         let mut result = self.clone();
         let ids = result.add_all_mut(vertices);
@@ -144,6 +155,7 @@ impl<V, E> Graph<V, E> {
             .collect()
     }
 
+    #[must_use]
     pub fn ids(&self) -> impl Iterator<Item = &Id> {
         self.guts.iter().filter_map(|v_opt| match v_opt {
             Some(v) => Some(v.get_id()),
@@ -151,6 +163,7 @@ impl<V, E> Graph<V, E> {
         })
     }
 
+    #[must_use]
     pub fn iter_data(&self) -> impl Iterator<Item = &V> {
         self.guts.iter().filter_map(|v_opt| match v_opt {
             Some(v) => Some(v.get_data()),
@@ -158,6 +171,7 @@ impl<V, E> Graph<V, E> {
         })
     }
 
+    #[must_use]
     pub fn iter_weights(&self) -> impl Iterator<Item = &E> {
         self.guts
             .iter()
@@ -169,6 +183,7 @@ impl<V, E> Graph<V, E> {
             .map(|(_, weight)| weight)
     }
 
+    #[must_use]
     pub fn vertices_with_edge_to(&self, sink: Id) -> impl Iterator<Item = &Id> {
         self.guts.iter().filter_map(move |v_opt| match v_opt {
             Some(v) if v.is_connected(sink) => Some(v.get_id()),
@@ -176,6 +191,7 @@ impl<V, E> Graph<V, E> {
         })
     }
 
+    #[must_use]
     pub fn neighbors(&self, source: Id) -> impl Iterator<Item = &Edge<E>> {
         self.get(source)
             .map(|v| v.into_iter())
@@ -185,16 +201,19 @@ impl<V, E> Graph<V, E> {
 }
 
 impl<V: Clone, E> Graph<V, E> {
+    #[must_use]
     pub fn get_data_mut(&mut self, id: Id) -> Option<&mut V> {
         self.get_mut(id).map(|v| v.get_data_mut())
     }
 
+    #[must_use]
     pub fn connect(&self, source: Id, sink: Id, edge: E) -> Self {
         let mut result = self.clone();
         result.connect_mut(source, sink, edge);
         result
     }
 
+    #[must_use]
     pub fn try_connect(&self, source: Id, sink: Id, edge: E) -> Option<Self> {
         let mut result = Cow::Borrowed(self);
         if result.has_vertex(source) && result.has_vertex(sink) {
@@ -226,6 +245,7 @@ impl<V: Clone, E> Graph<V, E> {
         false
     }
 
+    #[must_use]
     pub fn get_mut(&mut self, id: Id) -> Option<&mut Vertex<V, E>> {
         match self.guts.get_mut(id.get_index()) {
             Some(Some(vertex)) if vertex.same_id(id) => Some(vertex),
@@ -235,6 +255,7 @@ impl<V: Clone, E> Graph<V, E> {
 }
 
 impl<V: Clone, E: Clone> Graph<V, E> {
+    #[must_use]
     pub fn recreate(&self) -> Self {
         let mut result = Self::new();
         let mut ids = HashMap::new();
@@ -250,16 +271,19 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         result
     }
 
+    #[must_use]
     pub fn get_edge_mut(&mut self, source: Id, sink: Id) -> Option<&mut E> {
         self.get_mut(source).and_then(|v| v.get_cost_mut(sink))
     }
 
+    #[must_use]
     pub fn remove(&self, id: Id) -> Self {
         let mut result = self.clone();
         result.remove_mut(id);
         result
     }
 
+    #[must_use]
     pub fn try_remove(&self, id: Id) -> Option<Self> {
         let mut result = Cow::Borrowed(self);
         if remove(&mut result, id) {
@@ -269,12 +293,14 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         }
     }
 
+    #[must_use]
     pub fn remove_all<T: Into<Id>, I: IntoIterator<Item = T>>(&self, iterable: I) -> Self {
         let mut result = self.clone();
         result.remove_all_mut(iterable);
         result
     }
 
+    #[must_use]
     pub fn try_remove_all<T: Into<Id>, I: IntoIterator<Item = T>>(
         &self,
         iterable: I,
@@ -287,12 +313,14 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         }
     }
 
+    #[must_use]
     pub fn disconnect(&self, source: Id, sink: Id) -> Self {
         let mut result = self.clone();
         result.disconnect_mut(source, sink);
         result
     }
 
+    #[must_use]
     pub fn try_disconnect(&self, source: Id, sink: Id) -> Option<Self> {
         let mut result = Cow::Borrowed(self);
         if result.has_vertex(source) && result.has_vertex(sink) {
@@ -321,6 +349,7 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         changed
     }
 
+    #[must_use]
     fn remove_all_mut_no_inc<T: Into<Id>, I: IntoIterator<Item = T>>(
         &mut self,
         iterable: I,
@@ -330,6 +359,7 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         })
     }
 
+    #[must_use]
     fn try_remove_mut_no_inc(&mut self, id: Id) -> bool {
         if self.has_vertex(id) {
             self.remove_mut_no_inc(id);

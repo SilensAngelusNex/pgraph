@@ -30,30 +30,37 @@ impl<V: Clone, E> Clone for Vertex<V, E> {
 }
 
 impl<V, E> Vertex<V, E> {
+    #[must_use]
     pub fn get_data(&self) -> &V {
         &self.data
     }
 
+    #[must_use]
     pub fn get_id(&self) -> &Id {
         &self.id
     }
 
+    #[must_use]
     pub fn get_cost(&self, sink: Id) -> Option<&E> {
         self.adj.get_edge(sink)
     }
 
+    #[must_use]
     pub fn is_connected(&self, sink: Id) -> bool {
         self.adj.has_edge(sink)
     }
 
+    #[must_use]
     pub fn len_neighbors(&self) -> usize {
         self.adj.len()
     }
 
+    #[must_use]
     pub fn get_data_mut(&mut self) -> &mut V {
         &mut self.data
     }
 
+    #[must_use]
     pub(super) fn from(id: Id, data: V) -> Self {
         Vertex {
             id,
@@ -62,6 +69,7 @@ impl<V, E> Vertex<V, E> {
         }
     }
 
+    #[must_use]
     pub(super) fn same_id(&self, id: Id) -> bool {
         id == self.id
     }
@@ -72,6 +80,7 @@ impl<V, E> Vertex<V, E> {
 }
 
 impl<V, E: Clone> Vertex<V, E> {
+    #[must_use]
     pub fn get_cost_mut(&mut self, sink: Id) -> Option<&mut E> {
         self.adj.get_edge_mut(sink)
     }
