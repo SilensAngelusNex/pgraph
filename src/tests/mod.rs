@@ -231,17 +231,20 @@ fn test_debug() {
     let (a_ids, mut a) = create_vertices();
     add_edges(&a_ids, &mut a);
     let before_gen = a.get_gen();
-    a.remove_mut(a_ids[1]);
+    a.remove_mut(a_ids[0]);
     let after_gen = a.get_gen();
 
     let result = format!("{:?}", a);
     let expected = format!(
         "{}\n{}\n{}\n{}\n{}\n{}\n",
         format!("Graph (gen {}) {{", after_gen),
-        format!("\t1 (0 gen{}) => (None)", before_gen),
         format!("\tBlank"),
-        format!("\t3 (2 gen{}) => (3 gen{}: 34)", before_gen, before_gen),
-        format!("\t4 (3 gen{}) => (None)", before_gen),
+        format!("\t2 (1 gen{}) => (2 gen{}: 23)", before_gen, before_gen),
+        format!(
+            "\t3 (2 gen{}) => (1 gen{}: 32, 3 gen{}: 34)",
+            before_gen, before_gen, before_gen
+        ),
+        format!("\t4 (3 gen{}) => (1 gen{}: 42)", before_gen, before_gen),
         "}"
     );
 

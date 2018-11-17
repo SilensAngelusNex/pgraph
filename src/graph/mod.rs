@@ -35,7 +35,7 @@ impl<V, E> Default for Graph<V, E> {
 
 impl<V: Debug, E: Debug> Debug for Graph<V, E> {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        write!(f, "Graph (gen {}) {{", self.idgen.get_gen())?;
+        write!(f, "Graph ({:?}) {{", self.idgen)?;
         let mut any_vertices = false;
 
         for v_opt in self.guts.iter() {
