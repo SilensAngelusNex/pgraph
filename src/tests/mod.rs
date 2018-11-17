@@ -232,6 +232,7 @@ fn test_debug() {
     add_edges(&a_ids, &mut a);
     let before_gen = a.get_gen();
     a.remove_mut(a_ids[0]);
+    a.disconnect_mut(a_ids[3], a_ids[1]);
     let after_gen = a.get_gen();
 
     let result = format!("{:?}", a);
@@ -244,7 +245,7 @@ fn test_debug() {
             "\t3 (2 gen{}) => (1 gen{}: 32, 3 gen{}: 34)",
             before_gen, before_gen, before_gen
         ),
-        format!("\t4 (3 gen{}) => (1 gen{}: 42)", before_gen, before_gen),
+        format!("\t4 (3 gen{}) => (None)", before_gen),
         "}"
     );
 
