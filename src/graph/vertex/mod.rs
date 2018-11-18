@@ -6,7 +6,7 @@ use std::ops::{Index, IndexMut};
 
 pub mod adj;
 
-///
+/// Holds the data for a single Graph vertex. Contains the vertex [Id](struct.Id.html), the vertex's data, and the vertex's neighbors.
 pub struct Vertex<V, E> {
     id: Id,
     data: V,
@@ -30,36 +30,43 @@ impl<V: Clone, E> Clone for Vertex<V, E> {
 }
 
 impl<V, E> Vertex<V, E> {
+    /// Returns a reference to the data on this vertex
     #[must_use]
     pub fn get_data(&self) -> &V {
         &self.data
     }
 
+    /// Returns this vertex's Id
     #[must_use]
     pub fn get_id(&self) -> &Id {
         &self.id
     }
 
+    /// Returns the weight of the edge from this vertex to `sink`, or `None` if such an edge doesn't exist.
     #[must_use]
     pub fn get_cost(&self, sink: Id) -> Option<&E> {
         self.adj.get_edge(sink)
     }
 
+    /// Returns `true` iff there exists an edge from this vertex to `sink`
     #[must_use]
     pub fn is_connected(&self, sink: Id) -> bool {
         self.adj.has_edge(sink)
     }
 
+    /// Returns the number of outgoing edges this vertex has.
     #[must_use]
     pub fn len_neighbors(&self) -> usize {
         self.adj.len()
     }
 
+    /// Returns a mutable reference to the data on this vertex
     #[must_use]
     pub fn get_data_mut(&mut self) -> &mut V {
         &mut self.data
     }
 
+    /// Creates a vertex from an Id and vertex data. The vertex starts with no neighbors.
     #[must_use]
     pub(super) fn from(id: Id, data: V) -> Self {
         Vertex {
@@ -69,22 +76,30 @@ impl<V, E> Vertex<V, E> {
         }
     }
 
+    /// Checks if the given Id has the same generation and index as this vertex's Id
     #[must_use]
     pub(super) fn same_id(&self, id: Id) -> bool {
         id == self.id
     }
 
+    /// Creates an edge to `sink` with the given weight.
+    ///
+    /// This is `pub(super)` instead of `pub` because the vertex has no way to check whether `sink` actually exists in the Graph.
     pub(super) fn connect_to(&mut self, sink: Id, weight: E) {
         self.adj.add_edge(sink, weight)
     }
 }
 
 impl<V, E: Clone> Vertex<V, E> {
+    /// Returns a mutable reference to the weight of the edge from this vertex to sink, or `None` if one doesn't exist.
     #[must_use]
     pub fn get_cost_mut(&mut self, sink: Id) -> Option<&mut E> {
         self.adj.get_edge_mut(sink)
     }
 
+    /// Removes the edge from this vertex to `sink`.
+    ///
+    /// Returns `true` iff the edge existed to be removed.
     pub fn disconnect(&mut self, sink: Id) -> bool {
         self.adj.disconnect_edge(sink)
     }

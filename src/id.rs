@@ -1,8 +1,8 @@
 use std::fmt::{Debug, Error, Formatter};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-/// A generational id for some peice of data. Conceptually, you can think of it as a pointer
-/// that can only be created pointing to valid data (no nulls), andautomatically protects against use-after-free.
+/// A generational ID for some peice of data. Conceptually, you can think of it as a pointer
+/// that can only be created pointing to valid data (no nulls), and automatically protects against use-after-free.
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Id {
     index: usize,

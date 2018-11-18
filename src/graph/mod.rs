@@ -12,12 +12,18 @@ pub mod vertex;
 
 type GraphInternal<V, E> = Vector<Option<Vertex<V, E>>>;
 
+/// Represents a persistent graph with data on each vertex (of type V) and directed, weighted edges.
+/// (Edge weights are of type E.) Uses [Id](struct.Id.html)s as references to vertices.
+///
+/// All of the `_mut` methods will mutate the Graph in-place, while the corresponding methods without will clone the existing Graph and return a modified version.
+/// All of the `try_` methods will not panic if their non-`try` counterparts would, and do less redundant cloning.
+/// All the graph data is held using structual sharing, so the cloning will be minimally expensive, with respect to both time and memory.
 pub struct Graph<V, E> {
     guts: GraphInternal<V, E>,
     idgen: IdGen,
 }
 
-// Derive only implements for <V: Clone, E: Clone> because of rust#26925
+// `derive(Clone)` only implements for <V: Clone, E: Clone> because of rust#26925
 impl<V, E> Clone for Graph<V, E> {
     fn clone(&self) -> Self {
         Self {
@@ -53,12 +59,14 @@ impl<V: Debug, E: Debug> Debug for Graph<V, E> {
 
 // helpers
 impl<V, E> Graph<V, E> {
+    /// Gets the current generation of the Graph's IdGen
     #[cfg(test)]
     #[must_use]
     pub fn get_gen(&self) -> usize {
         self.idgen.get_gen()
     }
 
+    /// Counts the number of empty (`None`) slots in the underlying vertex Vector
     #[cfg(test)]
     #[must_use]
     pub fn count_empties(&self) -> usize {
@@ -68,6 +76,8 @@ impl<V, E> Graph<V, E> {
             .count()
     }
 
+    /// Finds an empty (`None`) slot in the underlying vector.
+    /// Current implementation gets the slot with the first index
     #[must_use]
     fn find_empty(&self) -> Option<usize> {
         for (i, v) in self.guts.iter().enumerate() {
@@ -80,6 +90,7 @@ impl<V, E> Graph<V, E> {
 }
 
 impl<V, E> Graph<V, E> {
+    /// Creates a new, empty Graph
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -88,11 +99,17 @@ impl<V, E> Graph<V, E> {
         }
     }
 
+    /// Checks if the given Id points to a valid [Vertex](struct.Vertex.html). Equivalent to `self.get(id).is_some()`.
     #[must_use]
     pub fn has_vertex(&self, id: Id) -> bool {
         self.get(id).is_some()
     }
 
+    /// Gets the [Vertex](struct.Vertex.html) corresponding to a given [Id](struct.Id.html). Will return `None` if one cannot be found.
+    ///
+    /// Some reasons this could occur are:
+    /// -   This `Id` is from a `Graph` that isn't an ancestor of the current `Graph`
+    /// -   The `Vertex` corresponding to this `Id` has been removed from the `Graph`
     #[must_use]
     pub fn get(&self, id: Id) -> Option<&Vertex<V, E>> {
         match self.guts.get(id.get_index()) {
@@ -101,53 +118,67 @@ impl<V, E> Graph<V, E> {
         }
     }
 
+    /// Gets the data from the [Vertex](struct.Vertex.html) corresponding to a given [Id](struct.Id.html). Will return `None`
+    /// if such a [Vertex](struct.Vertex.html) cannot be found. Equivalent to `self.get(id).get_data()`
     #[must_use]
     pub fn get_data(&self, id: Id) -> Option<&V> {
         self.get(id).map(|v| v.get_data())
     }
 
+    /// Returns true iff there exist vertices corresponding to both `source` and `sink` and `source` has an outgoing edge to `sink`.
     #[must_use]
     pub fn has_edge(&self, source: Id, sink: Id) -> bool {
         self.get(source).map_or(false, |v| v.is_connected(sink))
     }
 
+    /// If there exists an outgoing edge from `source` to `sink`, returns a reference to that edge's value. Otherwise, returns `None`.
     #[must_use]
     pub fn get_edge(&self, source: Id, sink: Id) -> Option<&E> {
         self.get(source).and_then(|v| v.get_cost(sink))
     }
 
+    /// Modifies the Graph to contain a new vertex containing `data`. (The vertex won't be connected to anything.)
+    ///
+    /// Returns the new Graph and the new vertex's Id.
     #[must_use]
-    pub fn add(&self, vertex: V) -> (Self, Id) {
+    pub fn add(&self, data: V) -> (Self, Id) {
         let mut result = self.clone();
-        let id = result.add_mut(vertex);
+        let id = result.add_mut(data);
         (result, id)
     }
 
-    pub fn add_mut(&mut self, vertex: V) -> Id {
+    /// Modifies the Graph in-place to contain a new vertex containing `data`. (The vertex won't be connected to anything.)  
+    /// Returns the new vertex's Id.
+    pub fn add_mut(&mut self, data: V) -> Id {
         match self.find_empty() {
             Some(index) => {
                 let id = self.idgen.create_id(index);
-                self.guts.set_mut(index, Some(Vertex::from(id, vertex)));
+                self.guts.set_mut(index, Some(Vertex::from(id, data)));
                 id
             }
             None => {
                 let id = self.idgen.create_id(self.guts.len());
-                self.guts.push_back_mut(Some(Vertex::from(id, vertex)));
+                self.guts.push_back_mut(Some(Vertex::from(id, data)));
                 id
             }
         }
     }
 
+    /// Adds multiple vertices to the Graph. Each contains one of the elements contained in `data_iter`.  
+    /// Returns the new Graph and a Vec of the added [Id](struct.Id.html)s. The order of [Id](struct.Id.html)s in the Vec correspond the position in the `data_iter` from which that vertex's data came.
+    ///
+    /// Prefer over iterating and calling `add` yourself because this makes less calls to `clone`.
     #[must_use]
-    pub fn add_all<T: Into<V>, I: IntoIterator<Item = T>>(&self, vertices: I) -> (Self, Vec<Id>) {
+    pub fn add_all<T: Into<V>, I: IntoIterator<Item = T>>(&self, data_iter: I) -> (Self, Vec<Id>) {
         let mut result = self.clone();
-        let ids = result.add_all_mut(vertices);
+        let ids = result.add_all_mut(data_iter);
         (result, ids)
     }
 
+    /// Adds multiple vertices to the Graph in-place. Each contains one of the elements contained in `data_iter`.  
+    /// Returns a Vec of the added [Id](struct.Id.html)s. The order of [Id](struct.Id.html)s in the Vec correspond the position in the `data_iter` from which that vertex's data came.
     ///
-    ///
-    /// TODO: Use batch insert when RPDS supports it.
+    /// TODO: Use batch insert when RPDS supports it, so that this is better than iterating and calling `add_mut`
     pub fn add_all_mut<T: Into<V>, I: IntoIterator<Item = T>>(&mut self, vertices: I) -> Vec<Id> {
         vertices
             .into_iter()
@@ -155,6 +186,7 @@ impl<V, E> Graph<V, E> {
             .collect()
     }
 
+    /// Returns an iterator over all the valid vertex [Id](struct.Id.html)s in the Graph
     #[must_use]
     pub fn ids(&self) -> impl Iterator<Item = &Id> {
         self.guts.iter().filter_map(|v_opt| match v_opt {
@@ -163,6 +195,7 @@ impl<V, E> Graph<V, E> {
         })
     }
 
+    /// Returns an iterator over all the valid vertex data in the Graph
     #[must_use]
     pub fn iter_data(&self) -> impl Iterator<Item = &V> {
         self.guts.iter().filter_map(|v_opt| match v_opt {
@@ -171,6 +204,7 @@ impl<V, E> Graph<V, E> {
         })
     }
 
+    /// Returns an iterator over all wieghts of edges existing in the Graph
     #[must_use]
     pub fn iter_weights(&self) -> impl Iterator<Item = &E> {
         self.guts
@@ -183,6 +217,7 @@ impl<V, E> Graph<V, E> {
             .map(|(_, weight)| weight)
     }
 
+    /// Returns an iterator over all wieghts of edges existing in the Graph that _end_ at `sink`.
     #[must_use]
     pub fn vertices_with_edge_to(&self, sink: Id) -> impl Iterator<Item = &Id> {
         self.guts.iter().filter_map(move |v_opt| match v_opt {
@@ -191,6 +226,7 @@ impl<V, E> Graph<V, E> {
         })
     }
 
+    /// Returns an iterator over all wieghts of edges existing in the Graph that _start_ at `source`.
     #[must_use]
     pub fn neighbors(&self, source: Id) -> impl Iterator<Item = &Edge<E>> {
         self.get(source)
@@ -201,11 +237,17 @@ impl<V, E> Graph<V, E> {
 }
 
 impl<V: Clone, E> Graph<V, E> {
+    /// Gets a mutable reference data from the [Vertex](struct.Vertex.html) corresponding to a given [Id](struct.Id.html). Will return `None`
+    /// if such a [Vertex](struct.Vertex.html) cannot be found. Equivalent to `self.get_mut(id).get_data_mut()`
     #[must_use]
     pub fn get_data_mut(&mut self, id: Id) -> Option<&mut V> {
         self.get_mut(id).map(|v| v.get_data_mut())
     }
 
+    /// Creates an edge from `source` to `sink`. If there already exists an edge, it will be overwritten. (Vertices can have edges to themselves.)
+    ///
+    /// Returns the new, modified version of the Graph.  
+    /// Panics if `source` and/or `sink` is not in the Graph
     #[must_use]
     pub fn connect(&self, source: Id, sink: Id, edge: E) -> Self {
         let mut result = self.clone();
@@ -213,6 +255,9 @@ impl<V: Clone, E> Graph<V, E> {
         result
     }
 
+    /// Tries to create an edge from `source` to `sink`. If there already exists an edge, it will be overwritten. (Vertices can have edges to themselves.)
+    ///
+    /// Returns the new, modified version of the Graph, or `None` if `source` and/or `sink` is not in the Graph.
     #[must_use]
     pub fn try_connect(&self, source: Id, sink: Id, edge: E) -> Option<Self> {
         let mut result = Cow::Borrowed(self);
@@ -224,6 +269,9 @@ impl<V: Clone, E> Graph<V, E> {
         }
     }
 
+    /// Creates an edge from `source` to `sink`, in-place. If there already exists an edge, it will be overwritten. (Vertices can have edges to themselves.)
+    ///
+    /// Panics if `source` and/or `sink` is not in the Graph
     pub fn connect_mut(&mut self, source: Id, sink: Id, edge: E) {
         if self.has_vertex(sink) {
             self[source].connect_to(sink, edge)
@@ -235,6 +283,9 @@ impl<V: Clone, E> Graph<V, E> {
         }
     }
 
+    /// Tries to create an edge from `source` to `sink`. If there already exists an edge, it will be overwritten. (Vertices can have edges to themselves.)
+    ///
+    /// Returns `false` iff the edge couldn't be created (i.e. `source` and/or `sink` is not in the Graph)
     pub fn try_connect_mut(&mut self, source: Id, sink: Id, edge: E) -> bool {
         if self.has_vertex(sink) {
             if let Some(v) = self.get_mut(source) {
@@ -245,6 +296,11 @@ impl<V: Clone, E> Graph<V, E> {
         false
     }
 
+    /// Gets a mutable reference to the [Vertex](struct.Vertex.html) corresponding to a given [Id](struct.Id.html). Will return `None` if one cannot be found.
+    ///
+    /// Some reasons this could occur are:
+    /// -   This `Id` is from a `Graph` that isn't an ancestor of the current `Graph`
+    /// -   The `Vertex` corresponding to this `Id` has been removed from the `Graph`
     #[must_use]
     pub fn get_mut(&mut self, id: Id) -> Option<&mut Vertex<V, E>> {
         match self.guts.get_mut(id.get_index()) {
@@ -255,6 +311,8 @@ impl<V: Clone, E> Graph<V, E> {
 }
 
 impl<V: Clone, E: Clone> Graph<V, E> {
+    /// Recreates a graph from scratch, so that it and the old graph have no shared structure.
+    /// This means that the [Id](struct.Id.html)s from the old graph will not work on the new one.
     #[must_use]
     pub fn recreate(&self) -> Self {
         let mut result = Self::new();
@@ -271,11 +329,15 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         result
     }
 
+    /// If there exists an outgoing edge from `source` to `sink`, returns a mutable reference to that edge's value. Otherwise, returns `None`.
     #[must_use]
     pub fn get_edge_mut(&mut self, source: Id, sink: Id) -> Option<&mut E> {
         self.get_mut(source).and_then(|v| v.get_cost_mut(sink))
     }
 
+    /// Removes a vertex and all edges from and to it from the Graph.
+    ///
+    /// Returns the modified Graph, which may be identical to the Graph passed in if the vertix didn't exist.
     #[must_use]
     pub fn remove(&self, id: Id) -> Self {
         let mut result = self.clone();
@@ -283,6 +345,9 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         result
     }
 
+    /// Tries to remove a vertex and all edges from and to it from the Graph.
+    ///
+    /// Returns the modified Graph if the vertex existed to be removed, `None` otherwise.
     #[must_use]
     pub fn try_remove(&self, id: Id) -> Option<Self> {
         let mut result = Cow::Borrowed(self);
@@ -293,6 +358,9 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         }
     }
 
+    /// Removes multiple vertices and all edges from and to them from the Graph.
+    ///
+    /// Returns the modified Graph, which may be identical to the Graph passed in if none of the vertices existed.
     #[must_use]
     pub fn remove_all<T: Into<Id>, I: IntoIterator<Item = T>>(&self, iterable: I) -> Self {
         let mut result = self.clone();
@@ -300,6 +368,9 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         result
     }
 
+    /// Remove multiple vertices and all edges from and to them from the Graph.
+    ///
+    /// Returns the modified Graph if one or more of the vertices existed to be removed, otherwise `None`.
     #[must_use]
     pub fn try_remove_all<T: Into<Id>, I: IntoIterator<Item = T>>(
         &self,
@@ -313,6 +384,9 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         }
     }
 
+    /// Removes the edge from `source` to `sink`, if one exists. Panics if `source` doesn't exist.
+    ///
+    /// Returns the modified Graph
     #[must_use]
     pub fn disconnect(&self, source: Id, sink: Id) -> Self {
         let mut result = self.clone();
@@ -320,6 +394,10 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         result
     }
 
+    /// Tries to remove the edge from `source` to `sink`, if one exists.
+    ///
+    /// If both `source` and `sink` exist and there existed an edge from `source` to `sink` to be removed, returns the modified Graph.
+    /// Otherwise, returns `None`.
     #[must_use]
     pub fn try_disconnect(&self, source: Id, sink: Id) -> Option<Self> {
         let mut result = Cow::Borrowed(self);
@@ -331,6 +409,9 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         }
     }
 
+    /// Removes a vertex and all edges from and to it from the Graph.
+    ///
+    /// Returns `true` if the vertex existed to be removed, `false` otherwise.
     pub fn remove_mut(&mut self, id: Id) -> bool {
         if self.has_vertex(id) {
             self.remove_mut_no_inc(id);
@@ -341,6 +422,9 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         }
     }
 
+    /// Removes multiple vertices and all edges from and to them from the Graph.
+    ///
+    /// Returns `true` if one or more vertices existed to be removed, `false` otherwise.
     pub fn remove_all_mut<T: Into<Id>, I: IntoIterator<Item = T>>(&mut self, iter: I) -> bool {
         let changed = self.remove_all_mut_no_inc(iter);
         if changed {
@@ -349,6 +433,7 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         changed
     }
 
+    /// Removes multiple vertices without incrementing the Graph's generation.
     #[must_use]
     fn remove_all_mut_no_inc<T: Into<Id>, I: IntoIterator<Item = T>>(
         &mut self,
@@ -359,6 +444,7 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         })
     }
 
+    /// Checks if a vertex exists, then removes it without incrementing the Graph's generation.
     #[must_use]
     fn try_remove_mut_no_inc(&mut self, id: Id) -> bool {
         if self.has_vertex(id) {
@@ -369,19 +455,27 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         }
     }
 
+    /// Removes a vertex without incrementing the Graph's generation.
     fn remove_mut_no_inc(&mut self, id: Id) {
         self.guts.set_mut(id.get_index(), None);
         self.disconnect_all_inc_mut(id);
     }
 
+    /// Removes the edge from `source` to `sink`, if one exists. Panics if `source` doesn't exist.
+    ///
+    /// Returns `true` if there was previously an edge from `source` to `sink`
     pub fn disconnect_mut(&mut self, source: Id, sink: Id) -> bool {
         self[source].disconnect(sink)
     }
 
+    /// Tries to remove the edge from `source` to `sink`, if one exists.
+    ///
+    /// Returns `true` if there was previously an edge from `source` to `sink`
     pub fn try_disconnect_mut(&mut self, source: Id, sink: Id) -> bool {
         self.get_mut(source).map_or(false, |v| v.disconnect(sink))
     }
 
+    /// Disconnects all the edges that end at `sink`.
     fn disconnect_all_inc_mut(&mut self, sink: Id) -> bool {
         let inc: Vec<Id> = self.vertices_with_edge_to(sink).cloned().collect();
         inc.into_iter().fold(false, |init, source| {
@@ -444,6 +538,7 @@ impl<V: Clone, E: Clone> IndexMut<(Id, Id)> for Graph<V, E> {
     }
 }
 
+/// Tries to remove a vertex if it exists in the Graph, only cloning if that Graph will actually be modified.
 fn remove<'a, V: Clone, E: Clone>(cow: &mut Cow<'a, Graph<V, E>>, id: Id) -> bool {
     if cow.has_vertex(id) {
         cow.to_mut().remove_mut_no_inc(id);
@@ -453,6 +548,7 @@ fn remove<'a, V: Clone, E: Clone>(cow: &mut Cow<'a, Graph<V, E>>, id: Id) -> boo
     }
 }
 
+/// Tries to remove multiple vertices if it exists in the Graph, only cloning if that Graph will actually be modified.
 fn remove_all<'a, V: Clone, E: Clone, T: Into<Id>, I: IntoIterator<Item = T>>(
     cow: &mut Cow<'a, Graph<V, E>>,
     iterable: I,
