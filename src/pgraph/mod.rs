@@ -15,16 +15,16 @@ type GraphInternal<V, E> = Vector<Option<Vertex<V, E>>>;
 /// Represents a persistent graph with data on each vertex (of type V) and directed, weighted edges.
 /// (Edge weights are of type E.) Uses [Id](struct.Id.html)s as references to vertices.
 ///
-/// All of the `_mut` methods will mutate the Graph in-place, while the corresponding methods without will clone the existing Graph and return a modified version.
+/// All of the `_mut` methods will mutate the PGraph in-place, while the corresponding methods without will clone the existing PGraph and return a modified version.
 /// All of the `try_` methods will not panic if their non-`try` counterparts would, and do less redundant cloning.
 /// All the graph data is held using structual sharing, so the cloning will be minimally expensive, with respect to both time and memory.
-pub struct Graph<V, E> {
+pub struct PGraph<V, E> {
     guts: GraphInternal<V, E>,
     idgen: IdGen,
 }
 
 // `derive(Clone)` only implements for <V: Clone, E: Clone> because of rust#26925
-impl<V, E> Clone for Graph<V, E> {
+impl<V, E> Clone for PGraph<V, E> {
     fn clone(&self) -> Self {
         Self {
             guts: self.guts.clone(),
@@ -33,15 +33,15 @@ impl<V, E> Clone for Graph<V, E> {
     }
 }
 
-impl<V, E> Default for Graph<V, E> {
+impl<V, E> Default for PGraph<V, E> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<V: Debug, E: Debug> Debug for Graph<V, E> {
+impl<V: Debug, E: Debug> Debug for PGraph<V, E> {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        write!(f, "Graph ({:?}) {{", self.idgen)?;
+        write!(f, "PGraph ({:?}) {{", self.idgen)?;
         let mut any_vertices = false;
 
         for v_opt in self.guts.iter() {
@@ -58,8 +58,8 @@ impl<V: Debug, E: Debug> Debug for Graph<V, E> {
 }
 
 // helpers
-impl<V, E> Graph<V, E> {
-    /// Gets the current generation of the Graph's IdGen
+impl<V, E> PGraph<V, E> {
+    /// Gets the current generation of the PGraph's IdGen
     #[cfg(test)]
     #[must_use]
     pub fn get_gen(&self) -> usize {
@@ -89,8 +89,8 @@ impl<V, E> Graph<V, E> {
     }
 }
 
-impl<V, E> Graph<V, E> {
-    /// Creates a new, empty Graph
+impl<V, E> PGraph<V, E> {
+    /// Creates a new, empty PGraph
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -108,8 +108,8 @@ impl<V, E> Graph<V, E> {
     /// Gets the [Vertex](struct.Vertex.html) corresponding to a given [Id](struct.Id.html). Will return `None` if one cannot be found.
     ///
     /// Some reasons this could occur are:
-    /// -   This `Id` is from a `Graph` that isn't an ancestor of the current `Graph`
-    /// -   The `Vertex` corresponding to this `Id` has been removed from the `Graph`
+    /// -   This `Id` is from a `PGraph` that isn't an ancestor of the current `PGraph`
+    /// -   The `Vertex` corresponding to this `Id` has been removed from the `PGraph`
     #[must_use]
     pub fn get(&self, id: Id) -> Option<&Vertex<V, E>> {
         match self.guts.get(id.get_index()) {
@@ -137,9 +137,9 @@ impl<V, E> Graph<V, E> {
         self.get(source).and_then(|v| v.get_cost(sink))
     }
 
-    /// Modifies the Graph to contain a new vertex containing `data`. (The vertex won't be connected to anything.)
+    /// Modifies the PGraph to contain a new vertex containing `data`. (The vertex won't be connected to anything.)
     ///
-    /// Returns the new Graph and the new vertex's Id.
+    /// Returns the new PGraph and the new vertex's Id.
     #[must_use]
     pub fn add(&self, data: V) -> (Self, Id) {
         let mut result = self.clone();
@@ -147,7 +147,7 @@ impl<V, E> Graph<V, E> {
         (result, id)
     }
 
-    /// Modifies the Graph in-place to contain a new vertex containing `data`. (The vertex won't be connected to anything.)  
+    /// Modifies the PGraph in-place to contain a new vertex containing `data`. (The vertex won't be connected to anything.)  
     /// Returns the new vertex's Id.
     pub fn add_mut(&mut self, data: V) -> Id {
         match self.find_empty() {
@@ -164,8 +164,8 @@ impl<V, E> Graph<V, E> {
         }
     }
 
-    /// Adds multiple vertices to the Graph. Each contains one of the elements contained in `data_iter`.  
-    /// Returns the new Graph and a Vec of the added [Id](struct.Id.html)s. The order of [Id](struct.Id.html)s in the Vec correspond the position in the `data_iter` from which that vertex's data came.
+    /// Adds multiple vertices to the PGraph. Each contains one of the elements contained in `data_iter`.  
+    /// Returns the new PGraph and a Vec of the added [Id](struct.Id.html)s. The order of [Id](struct.Id.html)s in the Vec correspond the position in the `data_iter` from which that vertex's data came.
     ///
     /// Prefer over iterating and calling `add` yourself because this makes less calls to `clone`.
     #[must_use]
@@ -175,7 +175,7 @@ impl<V, E> Graph<V, E> {
         (result, ids)
     }
 
-    /// Adds multiple vertices to the Graph in-place. Each contains one of the elements contained in `data_iter`.  
+    /// Adds multiple vertices to the PGraph in-place. Each contains one of the elements contained in `data_iter`.  
     /// Returns a Vec of the added [Id](struct.Id.html)s. The order of [Id](struct.Id.html)s in the Vec correspond the position in the `data_iter` from which that vertex's data came.
     ///
     /// TODO: Use batch insert when RPDS supports it, so that this is better than iterating and calling `add_mut`
@@ -186,7 +186,7 @@ impl<V, E> Graph<V, E> {
             .collect()
     }
 
-    /// Returns an iterator over all the valid vertex [Id](struct.Id.html)s in the Graph
+    /// Returns an iterator over all the valid vertex [Id](struct.Id.html)s in the PGraph
     #[must_use]
     pub fn ids(&self) -> impl Iterator<Item = &Id> {
         self.guts.iter().filter_map(|v_opt| match v_opt {
@@ -195,7 +195,7 @@ impl<V, E> Graph<V, E> {
         })
     }
 
-    /// Returns an iterator over all the valid vertex data in the Graph
+    /// Returns an iterator over all the valid vertex data in the PGraph
     #[must_use]
     pub fn iter_data(&self) -> impl Iterator<Item = &V> {
         self.guts.iter().filter_map(|v_opt| match v_opt {
@@ -204,7 +204,7 @@ impl<V, E> Graph<V, E> {
         })
     }
 
-    /// Returns an iterator over all wieghts of edges existing in the Graph
+    /// Returns an iterator over all wieghts of edges existing in the PGraph
     #[must_use]
     pub fn iter_weights(&self) -> impl Iterator<Item = &E> {
         self.guts
@@ -217,7 +217,7 @@ impl<V, E> Graph<V, E> {
             .map(|(_, weight)| weight)
     }
 
-    /// Returns an iterator over all wieghts of edges existing in the Graph that _end_ at `sink`.
+    /// Returns an iterator over all wieghts of edges existing in the PGraph that _end_ at `sink`.
     #[must_use]
     pub fn vertices_with_edge_to(&self, sink: Id) -> impl Iterator<Item = &Id> {
         self.guts.iter().filter_map(move |v_opt| match v_opt {
@@ -226,7 +226,7 @@ impl<V, E> Graph<V, E> {
         })
     }
 
-    /// Returns an iterator over all wieghts of edges existing in the Graph that _start_ at `source`.
+    /// Returns an iterator over all wieghts of edges existing in the PGraph that _start_ at `source`.
     #[must_use]
     pub fn neighbors(&self, source: Id) -> impl Iterator<Item = &Edge<E>> {
         self.get(source)
@@ -236,7 +236,7 @@ impl<V, E> Graph<V, E> {
     }
 }
 
-impl<V: Clone, E> Graph<V, E> {
+impl<V: Clone, E> PGraph<V, E> {
     /// Gets a mutable reference data from the [Vertex](struct.Vertex.html) corresponding to a given [Id](struct.Id.html). Will return `None`
     /// if such a [Vertex](struct.Vertex.html) cannot be found. Equivalent to `self.get_mut(id).get_data_mut()`
     #[must_use]
@@ -246,8 +246,8 @@ impl<V: Clone, E> Graph<V, E> {
 
     /// Creates an edge from `source` to `sink`. If there already exists an edge, it will be overwritten. (Vertices can have edges to themselves.)
     ///
-    /// Returns the new, modified version of the Graph.  
-    /// Panics if `source` and/or `sink` is not in the Graph
+    /// Returns the new, modified version of the PGraph.  
+    /// Panics if `source` and/or `sink` is not in the PGraph
     #[must_use]
     pub fn connect(&self, source: Id, sink: Id, edge: E) -> Self {
         let mut result = self.clone();
@@ -257,7 +257,7 @@ impl<V: Clone, E> Graph<V, E> {
 
     /// Tries to create an edge from `source` to `sink`. If there already exists an edge, it will be overwritten. (Vertices can have edges to themselves.)
     ///
-    /// Returns the new, modified version of the Graph, or `None` if `source` and/or `sink` is not in the Graph.
+    /// Returns the new, modified version of the PGraph, or `None` if `source` and/or `sink` is not in the PGraph.
     #[must_use]
     pub fn try_connect(&self, source: Id, sink: Id, edge: E) -> Option<Self> {
         let mut result = Cow::Borrowed(self);
@@ -271,7 +271,7 @@ impl<V: Clone, E> Graph<V, E> {
 
     /// Creates an edge from `source` to `sink`, in-place. If there already exists an edge, it will be overwritten. (Vertices can have edges to themselves.)
     ///
-    /// Panics if `source` and/or `sink` is not in the Graph
+    /// Panics if `source` and/or `sink` is not in the PGraph
     pub fn connect_mut(&mut self, source: Id, sink: Id, edge: E) {
         if self.has_vertex(sink) {
             self[source].connect_to(sink, edge)
@@ -285,7 +285,7 @@ impl<V: Clone, E> Graph<V, E> {
 
     /// Tries to create an edge from `source` to `sink`. If there already exists an edge, it will be overwritten. (Vertices can have edges to themselves.)
     ///
-    /// Returns `false` iff the edge couldn't be created (i.e. `source` and/or `sink` is not in the Graph)
+    /// Returns `false` iff the edge couldn't be created (i.e. `source` and/or `sink` is not in the PGraph)
     pub fn try_connect_mut(&mut self, source: Id, sink: Id, edge: E) -> bool {
         if self.has_vertex(sink) {
             if let Some(v) = self.get_mut(source) {
@@ -299,8 +299,8 @@ impl<V: Clone, E> Graph<V, E> {
     /// Gets a mutable reference to the [Vertex](struct.Vertex.html) corresponding to a given [Id](struct.Id.html). Will return `None` if one cannot be found.
     ///
     /// Some reasons this could occur are:
-    /// -   This `Id` is from a `Graph` that isn't an ancestor of the current `Graph`
-    /// -   The `Vertex` corresponding to this `Id` has been removed from the `Graph`
+    /// -   This `Id` is from a `PGraph` that isn't an ancestor of the current `PGraph`
+    /// -   The `Vertex` corresponding to this `Id` has been removed from the `PGraph`
     #[must_use]
     pub fn get_mut(&mut self, id: Id) -> Option<&mut Vertex<V, E>> {
         match self.guts.get_mut(id.get_index()) {
@@ -310,7 +310,7 @@ impl<V: Clone, E> Graph<V, E> {
     }
 }
 
-impl<V: Clone, E: Clone> Graph<V, E> {
+impl<V: Clone, E: Clone> PGraph<V, E> {
     /// Recreates a graph from scratch, so that it and the old graph have no shared structure.
     /// This means that the [Id](struct.Id.html)s from the old graph will not work on the new one.
     #[must_use]
@@ -335,9 +335,9 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         self.get_mut(source).and_then(|v| v.get_cost_mut(sink))
     }
 
-    /// Removes a vertex and all edges from and to it from the Graph.
+    /// Removes a vertex and all edges from and to it from the PGraph.
     ///
-    /// Returns the modified Graph, which may be identical to the Graph passed in if the vertix didn't exist.
+    /// Returns the modified PGraph, which may be identical to the PGraph passed in if the vertix didn't exist.
     #[must_use]
     pub fn remove(&self, id: Id) -> Self {
         let mut result = self.clone();
@@ -345,9 +345,9 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         result
     }
 
-    /// Tries to remove a vertex and all edges from and to it from the Graph.
+    /// Tries to remove a vertex and all edges from and to it from the PGraph.
     ///
-    /// Returns the modified Graph if the vertex existed to be removed, `None` otherwise.
+    /// Returns the modified PGraph if the vertex existed to be removed, `None` otherwise.
     #[must_use]
     pub fn try_remove(&self, id: Id) -> Option<Self> {
         let mut result = Cow::Borrowed(self);
@@ -358,9 +358,9 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         }
     }
 
-    /// Removes multiple vertices and all edges from and to them from the Graph.
+    /// Removes multiple vertices and all edges from and to them from the PGraph.
     ///
-    /// Returns the modified Graph, which may be identical to the Graph passed in if none of the vertices existed.
+    /// Returns the modified PGraph, which may be identical to the PGraph passed in if none of the vertices existed.
     #[must_use]
     pub fn remove_all<T: Into<Id>, I: IntoIterator<Item = T>>(&self, iterable: I) -> Self {
         let mut result = self.clone();
@@ -368,9 +368,9 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         result
     }
 
-    /// Remove multiple vertices and all edges from and to them from the Graph.
+    /// Remove multiple vertices and all edges from and to them from the PGraph.
     ///
-    /// Returns the modified Graph if one or more of the vertices existed to be removed, otherwise `None`.
+    /// Returns the modified PGraph if one or more of the vertices existed to be removed, otherwise `None`.
     #[must_use]
     pub fn try_remove_all<T: Into<Id>, I: IntoIterator<Item = T>>(
         &self,
@@ -386,7 +386,7 @@ impl<V: Clone, E: Clone> Graph<V, E> {
 
     /// Removes the edge from `source` to `sink`, if one exists. Panics if `source` doesn't exist.
     ///
-    /// Returns the modified Graph
+    /// Returns the modified PGraph
     #[must_use]
     pub fn disconnect(&self, source: Id, sink: Id) -> Self {
         let mut result = self.clone();
@@ -396,7 +396,7 @@ impl<V: Clone, E: Clone> Graph<V, E> {
 
     /// Tries to remove the edge from `source` to `sink`, if one exists.
     ///
-    /// If both `source` and `sink` exist and there existed an edge from `source` to `sink` to be removed, returns the modified Graph.
+    /// If both `source` and `sink` exist and there existed an edge from `source` to `sink` to be removed, returns the modified PGraph.
     /// Otherwise, returns `None`.
     #[must_use]
     pub fn try_disconnect(&self, source: Id, sink: Id) -> Option<Self> {
@@ -409,7 +409,7 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         }
     }
 
-    /// Removes a vertex and all edges from and to it from the Graph.
+    /// Removes a vertex and all edges from and to it from the PGraph.
     ///
     /// Returns `true` if the vertex existed to be removed, `false` otherwise.
     pub fn remove_mut(&mut self, id: Id) -> bool {
@@ -422,7 +422,7 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         }
     }
 
-    /// Removes multiple vertices and all edges from and to them from the Graph.
+    /// Removes multiple vertices and all edges from and to them from the PGraph.
     ///
     /// Returns `true` if one or more vertices existed to be removed, `false` otherwise.
     pub fn remove_all_mut<T: Into<Id>, I: IntoIterator<Item = T>>(&mut self, iter: I) -> bool {
@@ -433,7 +433,7 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         changed
     }
 
-    /// Removes multiple vertices without incrementing the Graph's generation.
+    /// Removes multiple vertices without incrementing the PGraph's generation.
     #[must_use]
     fn remove_all_mut_no_inc<T: Into<Id>, I: IntoIterator<Item = T>>(
         &mut self,
@@ -444,7 +444,7 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         })
     }
 
-    /// Checks if a vertex exists, then removes it without incrementing the Graph's generation.
+    /// Checks if a vertex exists, then removes it without incrementing the PGraph's generation.
     #[must_use]
     fn try_remove_mut_no_inc(&mut self, id: Id) -> bool {
         if self.has_vertex(id) {
@@ -455,7 +455,7 @@ impl<V: Clone, E: Clone> Graph<V, E> {
         }
     }
 
-    /// Removes a vertex without incrementing the Graph's generation.
+    /// Removes a vertex without incrementing the PGraph's generation.
     fn remove_mut_no_inc(&mut self, id: Id) {
         self.guts.set_mut(id.get_index(), None);
         self.disconnect_all_inc_mut(id);
@@ -484,7 +484,7 @@ impl<V: Clone, E: Clone> Graph<V, E> {
     }
 }
 
-impl<V, E> Index<Id> for Graph<V, E> {
+impl<V, E> Index<Id> for PGraph<V, E> {
     type Output = Vertex<V, E>;
 
     fn index(&self, id: Id) -> &Vertex<V, E> {
@@ -497,7 +497,7 @@ impl<V, E> Index<Id> for Graph<V, E> {
     }
 }
 
-impl<V: Clone, E> IndexMut<Id> for Graph<V, E> {
+impl<V: Clone, E> IndexMut<Id> for PGraph<V, E> {
     fn index_mut(&mut self, id: Id) -> &mut Vertex<V, E> {
         match self.guts.get_mut(id.get_index()) {
             Some(Some(vertex)) if vertex.same_id(id) => vertex,
@@ -508,7 +508,7 @@ impl<V: Clone, E> IndexMut<Id> for Graph<V, E> {
     }
 }
 
-impl<V, E> Index<(Id,)> for Graph<V, E> {
+impl<V, E> Index<(Id,)> for PGraph<V, E> {
     type Output = V;
 
     fn index(&self, id: (Id,)) -> &V {
@@ -516,13 +516,13 @@ impl<V, E> Index<(Id,)> for Graph<V, E> {
     }
 }
 
-impl<V: Clone, E> IndexMut<(Id,)> for Graph<V, E> {
+impl<V: Clone, E> IndexMut<(Id,)> for PGraph<V, E> {
     fn index_mut(&mut self, id: (Id,)) -> &mut V {
         self[id.0].get_data_mut()
     }
 }
 
-impl<V, E> Index<(Id, Id)> for Graph<V, E> {
+impl<V, E> Index<(Id, Id)> for PGraph<V, E> {
     type Output = E;
 
     fn index(&self, ids: (Id, Id)) -> &E {
@@ -531,15 +531,15 @@ impl<V, E> Index<(Id, Id)> for Graph<V, E> {
     }
 }
 
-impl<V: Clone, E: Clone> IndexMut<(Id, Id)> for Graph<V, E> {
+impl<V: Clone, E: Clone> IndexMut<(Id, Id)> for PGraph<V, E> {
     fn index_mut(&mut self, ids: (Id, Id)) -> &mut E {
         let (source, sink) = ids;
         self[source].index_mut(sink)
     }
 }
 
-/// Tries to remove a vertex if it exists in the Graph, only cloning if that Graph will actually be modified.
-fn remove<'a, V: Clone, E: Clone>(cow: &mut Cow<'a, Graph<V, E>>, id: Id) -> bool {
+/// Tries to remove a vertex if it exists in the PGraph, only cloning if that PGraph will actually be modified.
+fn remove<'a, V: Clone, E: Clone>(cow: &mut Cow<'a, PGraph<V, E>>, id: Id) -> bool {
     if cow.has_vertex(id) {
         cow.to_mut().remove_mut_no_inc(id);
         true
@@ -548,9 +548,9 @@ fn remove<'a, V: Clone, E: Clone>(cow: &mut Cow<'a, Graph<V, E>>, id: Id) -> boo
     }
 }
 
-/// Tries to remove multiple vertices if it exists in the Graph, only cloning if that Graph will actually be modified.
+/// Tries to remove multiple vertices if it exists in the PGraph, only cloning if that PGraph will actually be modified.
 fn remove_all<'a, V: Clone, E: Clone, T: Into<Id>, I: IntoIterator<Item = T>>(
-    cow: &mut Cow<'a, Graph<V, E>>,
+    cow: &mut Cow<'a, PGraph<V, E>>,
     iterable: I,
 ) -> bool {
     iterable.into_iter().fold(false, |changed, into_id| {
@@ -561,7 +561,7 @@ fn remove_all<'a, V: Clone, E: Clone, T: Into<Id>, I: IntoIterator<Item = T>>(
 type GutsIter<'a, V, E> = <&'a GraphInternal<V, E> as IntoIterator>::IntoIter;
 type VertexDeref<'a, V, E> = fn(&'a Option<Vertex<V, E>>) -> Option<&'a Vertex<V, E>>;
 
-impl<'a, V, E> IntoIterator for &'a Graph<V, E> {
+impl<'a, V, E> IntoIterator for &'a PGraph<V, E> {
     type Item = &'a Vertex<V, E>;
     type IntoIter = FilterMap<GutsIter<'a, V, E>, VertexDeref<'a, V, E>>;
 

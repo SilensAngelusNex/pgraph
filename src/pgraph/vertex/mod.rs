@@ -6,7 +6,7 @@ use std::ops::{Index, IndexMut};
 
 pub mod adj;
 
-/// Holds the data for a single Graph vertex. Contains the vertex [Id](struct.Id.html), the vertex's data, and the vertex's neighbors.
+/// Holds the data for a single PGraph vertex. Contains the vertex [Id](struct.Id.html), the vertex's data, and the vertex's neighbors.
 pub struct Vertex<V, E> {
     id: Id,
     data: V,
@@ -84,7 +84,7 @@ impl<V, E> Vertex<V, E> {
 
     /// Creates an edge to `sink` with the given weight.
     ///
-    /// This is `pub(super)` instead of `pub` because the vertex has no way to check whether `sink` actually exists in the Graph.
+    /// This is `pub(super)` instead of `pub` because the vertex has no way to check whether `sink` actually exists in the PGraph.
     pub(super) fn connect_to(&mut self, sink: Id, weight: E) {
         self.adj.add_edge(sink, weight)
     }

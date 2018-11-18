@@ -215,7 +215,7 @@ fn test_remove_all() {
 #[test]
 fn test_add_all() {
     let vertices: Vec<usize> = vec![0, 1, 2, 3, 4];
-    let mut a = Graph::<usize, usize>::new();
+    let mut a = PGraph::<usize, usize>::new();
 
     let (b, b_ids) = a.add_all(vertices.clone());
     let a_ids = a.add_all_mut(vertices);
@@ -238,7 +238,7 @@ fn test_debug() {
     let result = format!("{:?}", a);
     let expected = format!(
         "{}\n{}\n{}\n{}\n{}\n{}\n",
-        format!("Graph (gen {}) {{", after_gen),
+        format!("PGraph (gen {}) {{", after_gen),
         format!("\tBlank"),
         format!("\t2 (1 gen{}) => (2 gen{}: 23)", before_gen, before_gen),
         format!(
@@ -269,8 +269,8 @@ fn test_get_edge_from_vertex() {
     assert!(!v0.disconnect(b_ids[1]));
 }
 
-fn create_vertices() -> (Vec<Id>, Graph<usize, usize>) {
-    let mut graph = Graph::default();
+fn create_vertices() -> (Vec<Id>, PGraph<usize, usize>) {
+    let mut graph = PGraph::default();
     let mut vec = Vec::new();
 
     vec.push(graph.add_mut(1));
@@ -281,7 +281,7 @@ fn create_vertices() -> (Vec<Id>, Graph<usize, usize>) {
     (vec, graph)
 }
 
-fn add_edges(v: &[Id], graph: &mut Graph<usize, usize>) {
+fn add_edges(v: &[Id], graph: &mut PGraph<usize, usize>) {
     graph.connect_mut(v[0], v[1], 12);
     graph.connect_mut(v[1], v[2], 23);
     graph.connect_mut(v[2], v[1], 32);

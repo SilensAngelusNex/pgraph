@@ -3,7 +3,7 @@
 # PGraph
 
 PGraph provides a persistent graph data structure with the following features:
-* Supports optional data for vertices and edges (For example, `Graph<(), E>` has data on edges only.)
+* Supports optional data for vertices and edges (For example, `PGraph<(), E>` has data on edges only.)
 * Directed edges, for that sweet, sweet versitility
 * Structural sharing built on [rpds](https://crates.io/crates/rpds) data structures
 * TODO: Common graph algorithms (Dijkstra's, Bellman-Ford, and Floyd-Warshall are the first ones I'm planning, but make an issue if there's another that you want.)
@@ -20,7 +20,7 @@ pgraph = { git = "https://github.com/SilensAngelusNex/pgraph.git" }
 ## Usage
 
 ```rust
-let mut g = Graph::new();
+let mut g = PGraph::new();
 let v1 = g.add_mut(1);
 let v2 = g.add_mut(2);
 let v3 = g.add_mut(3);
@@ -53,12 +53,12 @@ println!("i = {:?}", i);
 println!("----------------\n\n");
 println!("j = {:?}", j);
 println!("----------------\n\n");
-println!("_ = {:?}", Graph::<i8, i8>::new());
+println!("_ = {:?}", PGraph::<i8, i8>::new());
 ```
 
 Output:
 ```
-g = Graph (gen 0) {
+g = PGraph (gen 0) {
 	1 (0 gen0) => (1 gen0: 12)
 	2 (1 gen0) => (2 gen0: 23)
 	3 (2 gen0) => (1 gen0: 32, 3 gen0: 34)
@@ -69,7 +69,7 @@ g = Graph (gen 0) {
 ----------------
 
 
-h = Graph (gen 2) {
+h = PGraph (gen 2) {
 	6 (0 gen2) => (4 gen0: 65)
 	2 (1 gen0) => (2 gen0: 23)
 	3 (2 gen0) => (1 gen0: 32, 3 gen0: 34)
@@ -80,7 +80,7 @@ h = Graph (gen 2) {
 ----------------
 
 
-i = Graph (gen 3) {
+i = PGraph (gen 3) {
 	6 (0 gen2) => (4 gen0: 65)
 	2 (1 gen0) => (2 gen0: 23)
 	3 (2 gen0) => (1 gen0: 32, 3 gen0: 34)
@@ -91,7 +91,7 @@ i = Graph (gen 3) {
 ----------------
 
 
-j = Graph (gen 5) {
+j = PGraph (gen 5) {
 	6 (0 gen2) => (3 gen5: 67, 4 gen0: 65)
 	2 (1 gen0) => (2 gen0: 23)
 	3 (2 gen0) => (1 gen0: 32)
@@ -102,5 +102,5 @@ j = Graph (gen 5) {
 ----------------
 
 
-_ = Graph (gen 6) {}
+_ = PGraph (gen 6) {}
 ```

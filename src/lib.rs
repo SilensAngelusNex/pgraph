@@ -10,13 +10,13 @@ extern crate rpds;
 #[cfg(test)]
 #[macro_use]
 extern crate more_asserts;
-mod graph;
 mod id;
+mod pgraph;
 
-pub use graph::vertex::adj::Edge;
-pub use graph::vertex::Vertex;
-pub use graph::Graph;
 pub use id::Id;
+pub use pgraph::vertex::adj::Edge;
+pub use pgraph::vertex::Vertex;
+pub use pgraph::PGraph;
 
 #[cfg(test)]
 mod tests;
