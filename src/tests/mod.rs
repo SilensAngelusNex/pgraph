@@ -93,8 +93,8 @@ fn test_remove() {
     assert!(g.ids().count() < ids.iter().count());
 
     let new_id = g.add_mut(6);
-    let old_v = g.get(v_id);
-    let new_v = g.get(new_id);
+    let old_v = g.vertex(v_id);
+    let new_v = g.vertex(new_id);
 
     assert!(old_v.is_none());
     assert!(new_v.is_some());
@@ -258,7 +258,7 @@ fn test_edge_from_vertex() {
     let (b_ids, _) = create_vertices();
     add_edges(&a_ids, &mut a);
 
-    let v0 = a.get_mut(a_ids[0]).unwrap();
+    let v0 = a.vertex_mut(a_ids[0]).unwrap();
     assert_eq!(v0[a_ids[1]], 12);
 
     assert!(v0.cost(b_ids[1]).is_none());

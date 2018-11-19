@@ -102,7 +102,7 @@ impl<V, E> PGraph<V, E> {
     /// Checks if the given Id points to a valid [Vertex](struct.Vertex.html). Equivalent to `self.get(id).is_some()`.
     #[must_use]
     pub fn has_vertex(&self, id: Id) -> bool {
-        self.get(id).is_some()
+        self.vertex(id).is_some()
     }
 
     /// Gets the [Vertex](struct.Vertex.html) corresponding to a given [Id](struct.Id.html). Will return `None` if one cannot be found.
@@ -111,7 +111,7 @@ impl<V, E> PGraph<V, E> {
     /// -   This `Id` is from a `PGraph` that isn't an ancestor of the current `PGraph`
     /// -   The `Vertex` corresponding to this `Id` has been removed from the `PGraph`
     #[must_use]
-    pub fn get(&self, id: Id) -> Option<&Vertex<V, E>> {
+    pub fn vertex(&self, id: Id) -> Option<&Vertex<V, E>> {
         match self.guts.get(id.index()) {
             Some(Some(vertex)) if vertex.same_id(id) => Some(vertex),
             _ => None,
@@ -122,19 +122,19 @@ impl<V, E> PGraph<V, E> {
     /// if such a [Vertex](struct.Vertex.html) cannot be found. Equivalent to `self.get(id).data()`
     #[must_use]
     pub fn vertex_data(&self, id: Id) -> Option<&V> {
-        self.get(id).map(|v| v.data())
+        self.vertex(id).map(|v| v.data())
     }
 
     /// Returns true iff there exist vertices corresponding to both `source` and `sink` and `source` has an outgoing edge to `sink`.
     #[must_use]
     pub fn has_edge(&self, source: Id, sink: Id) -> bool {
-        self.get(source).map_or(false, |v| v.is_connected(sink))
+        self.vertex(source).map_or(false, |v| v.is_connected(sink))
     }
 
     /// If there exists an outgoing edge from `source` to `sink`, returns a reference to that edge's value. Otherwise, returns `None`.
     #[must_use]
     pub fn edge(&self, source: Id, sink: Id) -> Option<&E> {
-        self.get(source).and_then(|v| v.cost(sink))
+        self.vertex(source).and_then(|v| v.cost(sink))
     }
 
     /// Modifies the PGraph to contain a new vertex containing `data`. (The vertex won't be connected to anything.)
@@ -229,7 +229,7 @@ impl<V, E> PGraph<V, E> {
     /// Returns an iterator over all wieghts of edges existing in the PGraph that _start_ at `source`.
     #[must_use]
     pub fn neighbors(&self, source: Id) -> impl Iterator<Item = &Edge<E>> {
-        self.get(source)
+        self.vertex(source)
             .map(|v| v.into_iter())
             .into_iter()
             .flatten()
@@ -241,7 +241,7 @@ impl<V: Clone, E> PGraph<V, E> {
     /// if such a [Vertex](struct.Vertex.html) cannot be found. Equivalent to `self.get_mut(id).data_mut()`
     #[must_use]
     pub fn vertex_data_mut(&mut self, id: Id) -> Option<&mut V> {
-        self.get_mut(id).map(|v| v.data_mut())
+        self.vertex_mut(id).map(|v| v.data_mut())
     }
 
     /// Creates an edge from `source` to `sink`. If there already exists an edge, it will be overwritten. (Vertices can have edges to themselves.)
@@ -288,7 +288,7 @@ impl<V: Clone, E> PGraph<V, E> {
     /// Returns `false` iff the edge couldn't be created (i.e. `source` and/or `sink` is not in the PGraph)
     pub fn try_connect_mut(&mut self, source: Id, sink: Id, edge: E) -> bool {
         if self.has_vertex(sink) {
-            if let Some(v) = self.get_mut(source) {
+            if let Some(v) = self.vertex_mut(source) {
                 v.connect_to(sink, edge);
                 return true;
             }
@@ -302,7 +302,7 @@ impl<V: Clone, E> PGraph<V, E> {
     /// -   This `Id` is from a `PGraph` that isn't an ancestor of the current `PGraph`
     /// -   The `Vertex` corresponding to this `Id` has been removed from the `PGraph`
     #[must_use]
-    pub fn get_mut(&mut self, id: Id) -> Option<&mut Vertex<V, E>> {
+    pub fn vertex_mut(&mut self, id: Id) -> Option<&mut Vertex<V, E>> {
         match self.guts.get_mut(id.index()) {
             Some(Some(vertex)) if vertex.same_id(id) => Some(vertex),
             _ => None,
@@ -332,7 +332,7 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
     /// If there exists an outgoing edge from `source` to `sink`, returns a mutable reference to that edge's value. Otherwise, returns `None`.
     #[must_use]
     pub fn edge_mut(&mut self, source: Id, sink: Id) -> Option<&mut E> {
-        self.get_mut(source).and_then(|v| v.cost_mut(sink))
+        self.vertex_mut(source).and_then(|v| v.cost_mut(sink))
     }
 
     /// Removes a vertex and all edges from and to it from the PGraph.
@@ -472,7 +472,8 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
     ///
     /// Returns `true` if there was previously an edge from `source` to `sink`
     pub fn try_disconnect_mut(&mut self, source: Id, sink: Id) -> bool {
-        self.get_mut(source).map_or(false, |v| v.disconnect(sink))
+        self.vertex_mut(source)
+            .map_or(false, |v| v.disconnect(sink))
     }
 
     /// Disconnects all the edges that end at `sink`.
