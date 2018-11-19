@@ -134,7 +134,7 @@ impl<V, E> PGraph<V, E> {
     /// If there exists an outgoing edge from `source` to `sink`, returns a reference to that edge's value. Otherwise, returns `None`.
     #[must_use]
     pub fn edge(&self, source: Id, sink: Id) -> Option<&E> {
-        self.get(source).and_then(|v| v.get_cost(sink))
+        self.get(source).and_then(|v| v.cost(sink))
     }
 
     /// Modifies the PGraph to contain a new vertex containing `data`. (The vertex won't be connected to anything.)
@@ -332,7 +332,7 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
     /// If there exists an outgoing edge from `source` to `sink`, returns a mutable reference to that edge's value. Otherwise, returns `None`.
     #[must_use]
     pub fn edge_mut(&mut self, source: Id, sink: Id) -> Option<&mut E> {
-        self.get_mut(source).and_then(|v| v.get_cost_mut(sink))
+        self.get_mut(source).and_then(|v| v.cost_mut(sink))
     }
 
     /// Removes a vertex and all edges from and to it from the PGraph.

@@ -150,7 +150,7 @@ fn test_recreate() {
 
         assert_eq!(a_v.data(), b_v.data());
         for (a_sink, b_sink) in a.ids().zip(b.ids()) {
-            assert_eq!(a_v.get_cost(*a_sink), b_v.get_cost(*b_sink))
+            assert_eq!(a_v.cost(*a_sink), b_v.cost(*b_sink))
         }
     }
 
@@ -261,9 +261,9 @@ fn test_edge_from_vertex() {
     let v0 = a.get_mut(a_ids[0]).unwrap();
     assert_eq!(v0[a_ids[1]], 12);
 
-    assert!(v0.get_cost(b_ids[1]).is_none());
-    assert!(v0.get_cost_mut(b_ids[1]).is_none());
-    assert!(v0.get_cost_mut(a_ids[1]).is_some());
+    assert!(v0.cost(b_ids[1]).is_none());
+    assert!(v0.cost_mut(b_ids[1]).is_none());
+    assert!(v0.cost_mut(a_ids[1]).is_some());
 
     assert!(v0.disconnect(a_ids[1]));
     assert!(!v0.disconnect(b_ids[1]));
