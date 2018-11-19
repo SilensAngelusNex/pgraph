@@ -32,7 +32,7 @@ impl<V: Clone, E> Clone for Vertex<V, E> {
 impl<V, E> Vertex<V, E> {
     /// Returns a reference to the data on this vertex
     #[must_use]
-    pub fn get_data(&self) -> &V {
+    pub fn data(&self) -> &V {
         &self.data
     }
 
@@ -62,7 +62,7 @@ impl<V, E> Vertex<V, E> {
 
     /// Returns a mutable reference to the data on this vertex
     #[must_use]
-    pub fn get_data_mut(&mut self) -> &mut V {
+    pub fn data_mut(&mut self) -> &mut V {
         &mut self.data
     }
 

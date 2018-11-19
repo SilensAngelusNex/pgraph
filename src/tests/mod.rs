@@ -45,7 +45,7 @@ fn test_connect_mut() {
 
     for source in &g {
         for (sink, weight) in source {
-            let calc_weight = source.get_data() * 10 + g[(*sink,)];
+            let calc_weight = source.data() * 10 + g[(*sink,)];
             assert_eq!(weight, &calc_weight);
         }
     }
@@ -53,7 +53,7 @@ fn test_connect_mut() {
     for source in g.ids() {
         for sink in g.ids() {
             if g.has_edge(*source, *sink) {
-                let calc_weight = g[(*source,)] * 10 + g[*sink].get_data();
+                let calc_weight = g[(*source,)] * 10 + g[*sink].data();
                 assert_eq!(g[(*source, *sink)], calc_weight);
             }
         }
@@ -68,7 +68,7 @@ fn test_get_mut() {
 
     g[(v_id,)] *= 2;
     *g.get_data_mut(v_id).unwrap() *= 2;
-    *g[v_id].get_data_mut() *= 2;
+    *g[v_id].data_mut() *= 2;
 
     assert_eq!(g[(v_id,)], v * 8);
 }
@@ -148,7 +148,7 @@ fn test_recreate() {
         let a_v = &a[*a_id];
         let b_v = &b[*b_id];
 
-        assert_eq!(a_v.get_data(), b_v.get_data());
+        assert_eq!(a_v.data(), b_v.data());
         for (a_sink, b_sink) in a.ids().zip(b.ids()) {
             assert_eq!(a_v.get_cost(*a_sink), b_v.get_cost(*b_sink))
         }

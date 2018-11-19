@@ -119,10 +119,10 @@ impl<V, E> PGraph<V, E> {
     }
 
     /// Gets the data from the [Vertex](struct.Vertex.html) corresponding to a given [Id](struct.Id.html). Will return `None`
-    /// if such a [Vertex](struct.Vertex.html) cannot be found. Equivalent to `self.get(id).get_data()`
+    /// if such a [Vertex](struct.Vertex.html) cannot be found. Equivalent to `self.get(id).data()`
     #[must_use]
     pub fn get_data(&self, id: Id) -> Option<&V> {
-        self.get(id).map(|v| v.get_data())
+        self.get(id).map(|v| v.data())
     }
 
     /// Returns true iff there exist vertices corresponding to both `source` and `sink` and `source` has an outgoing edge to `sink`.
@@ -199,7 +199,7 @@ impl<V, E> PGraph<V, E> {
     #[must_use]
     pub fn iter_data(&self) -> impl Iterator<Item = &V> {
         self.guts.iter().filter_map(|v_opt| match v_opt {
-            Some(v) => Some(v.get_data()),
+            Some(v) => Some(v.data()),
             None => None,
         })
     }
@@ -238,10 +238,10 @@ impl<V, E> PGraph<V, E> {
 
 impl<V: Clone, E> PGraph<V, E> {
     /// Gets a mutable reference data from the [Vertex](struct.Vertex.html) corresponding to a given [Id](struct.Id.html). Will return `None`
-    /// if such a [Vertex](struct.Vertex.html) cannot be found. Equivalent to `self.get_mut(id).get_data_mut()`
+    /// if such a [Vertex](struct.Vertex.html) cannot be found. Equivalent to `self.get_mut(id).data_mut()`
     #[must_use]
     pub fn get_data_mut(&mut self, id: Id) -> Option<&mut V> {
-        self.get_mut(id).map(|v| v.get_data_mut())
+        self.get_mut(id).map(|v| v.data_mut())
     }
 
     /// Creates an edge from `source` to `sink`. If there already exists an edge, it will be overwritten. (Vertices can have edges to themselves.)
@@ -318,7 +318,7 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
         let mut result = Self::new();
         let mut ids = HashMap::new();
         for v in self {
-            ids.insert(v.id(), result.add_mut(v.get_data().clone()));
+            ids.insert(v.id(), result.add_mut(v.data().clone()));
         }
 
         for source in self {
@@ -512,13 +512,13 @@ impl<V, E> Index<(Id,)> for PGraph<V, E> {
     type Output = V;
 
     fn index(&self, id: (Id,)) -> &V {
-        self[id.0].get_data()
+        self[id.0].data()
     }
 }
 
 impl<V: Clone, E> IndexMut<(Id,)> for PGraph<V, E> {
     fn index_mut(&mut self, id: (Id,)) -> &mut V {
-        self[id.0].get_data_mut()
+        self[id.0].data_mut()
     }
 }
 
