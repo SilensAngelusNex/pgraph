@@ -20,14 +20,14 @@ fn test_get() {
     add_edges(&a_ids, &mut a);
 
     for id in a_ids {
-        assert!(a.get_data(id).is_some());
+        assert!(a.vertex_data(id).is_some());
         for (sink, _) in a.neighbors(id) {
             assert!(a.get_edge(id, *sink).is_some());
         }
     }
 
     for id in b_ids {
-        assert!(a.get_data(id).is_none());
+        assert!(a.vertex_data(id).is_none());
         assert!(a.neighbors(id).next().is_none());
     }
 }
@@ -67,7 +67,7 @@ fn test_get_mut() {
     let v_id = ids[v - 1];
 
     g[(v_id,)] *= 2;
-    *g.get_data_mut(v_id).unwrap() *= 2;
+    *g.vertex_data_mut(v_id).unwrap() *= 2;
     *g[v_id].data_mut() *= 2;
 
     assert_eq!(g[(v_id,)], v * 8);

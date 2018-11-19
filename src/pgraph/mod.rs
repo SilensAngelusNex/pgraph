@@ -121,7 +121,7 @@ impl<V, E> PGraph<V, E> {
     /// Gets the data from the [Vertex](struct.Vertex.html) corresponding to a given [Id](struct.Id.html). Will return `None`
     /// if such a [Vertex](struct.Vertex.html) cannot be found. Equivalent to `self.get(id).data()`
     #[must_use]
-    pub fn get_data(&self, id: Id) -> Option<&V> {
+    pub fn vertex_data(&self, id: Id) -> Option<&V> {
         self.get(id).map(|v| v.data())
     }
 
@@ -240,7 +240,7 @@ impl<V: Clone, E> PGraph<V, E> {
     /// Gets a mutable reference data from the [Vertex](struct.Vertex.html) corresponding to a given [Id](struct.Id.html). Will return `None`
     /// if such a [Vertex](struct.Vertex.html) cannot be found. Equivalent to `self.get_mut(id).data_mut()`
     #[must_use]
-    pub fn get_data_mut(&mut self, id: Id) -> Option<&mut V> {
+    pub fn vertex_data_mut(&mut self, id: Id) -> Option<&mut V> {
         self.get_mut(id).map(|v| v.data_mut())
     }
 
