@@ -64,7 +64,7 @@ impl<E> AdjList<E> {
     ///
     /// Runs in O(1)
     pub(super) fn get_edge(&self, sink: Id) -> Option<&E> {
-        let e = self.edges.get(sink.get_index());
+        let e = self.edges.get(sink.index());
         if let Some(Some((id, weight))) = e {
             if sink == *id {
                 Some(weight)
@@ -81,10 +81,10 @@ impl<E> AdjList<E> {
     /// Worst case runs in O(N), where N is the maximum number of vertices *currently* in the graph. Amortized O(1).
     pub(super) fn add_edge(&mut self, sink: Id, weight: E) {
         let mut new_edges = self.edges.clone();
-        while new_edges.len() <= sink.get_index() {
+        while new_edges.len() <= sink.index() {
             new_edges.push_back_mut(None);
         }
-        new_edges.set_mut(sink.get_index(), Some((sink, weight)));
+        new_edges.set_mut(sink.index(), Some((sink, weight)));
         self.edges = new_edges;
     }
 }
@@ -94,7 +94,7 @@ impl<E: Clone> AdjList<E> {
     ///
     /// Runs in O(1)
     pub(super) fn get_edge_mut(&mut self, sink: Id) -> Option<&mut E> {
-        let e = self.edges.get_mut(sink.get_index());
+        let e = self.edges.get_mut(sink.index());
         if let Some(Some((id, weight))) = e {
             if sink == *id {
                 Some(weight)
@@ -111,7 +111,7 @@ impl<E: Clone> AdjList<E> {
     /// Runs in O(1)
     pub(super) fn disconnect_edge(&mut self, sink: Id) -> bool {
         let mut result = false;
-        let e = self.edges.get_mut(sink.get_index());
+        let e = self.edges.get_mut(sink.index());
         if let Some(edge) = e {
             let take = if let Some((id, _)) = edge {
                 sink == *id

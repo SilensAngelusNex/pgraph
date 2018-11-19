@@ -112,7 +112,7 @@ impl<V, E> PGraph<V, E> {
     /// -   The `Vertex` corresponding to this `Id` has been removed from the `PGraph`
     #[must_use]
     pub fn get(&self, id: Id) -> Option<&Vertex<V, E>> {
-        match self.guts.get(id.get_index()) {
+        match self.guts.get(id.index()) {
             Some(Some(vertex)) if vertex.same_id(id) => Some(vertex),
             _ => None,
         }
@@ -303,7 +303,7 @@ impl<V: Clone, E> PGraph<V, E> {
     /// -   The `Vertex` corresponding to this `Id` has been removed from the `PGraph`
     #[must_use]
     pub fn get_mut(&mut self, id: Id) -> Option<&mut Vertex<V, E>> {
-        match self.guts.get_mut(id.get_index()) {
+        match self.guts.get_mut(id.index()) {
             Some(Some(vertex)) if vertex.same_id(id) => Some(vertex),
             _ => None,
         }
@@ -457,7 +457,7 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
 
     /// Removes a vertex without incrementing the PGraph's generation.
     fn remove_mut_no_inc(&mut self, id: Id) {
-        self.guts.set_mut(id.get_index(), None);
+        self.guts.set_mut(id.index(), None);
         self.disconnect_all_inc_mut(id);
     }
 
@@ -488,7 +488,7 @@ impl<V, E> Index<Id> for PGraph<V, E> {
     type Output = Vertex<V, E>;
 
     fn index(&self, id: Id) -> &Vertex<V, E> {
-        match self.guts.get(id.get_index()) {
+        match self.guts.get(id.index()) {
             Some(Some(vertex)) if vertex.same_id(id) => vertex,
             Some(Some(_)) => panic!("The Id {:?} is of an invalid generation. It does not correspond to any vertices in this graph.", id),
             Some(None) => panic!("No vertex found for Id {:?}. It has likely been removed from the graph.", id),
@@ -499,7 +499,7 @@ impl<V, E> Index<Id> for PGraph<V, E> {
 
 impl<V: Clone, E> IndexMut<Id> for PGraph<V, E> {
     fn index_mut(&mut self, id: Id) -> &mut Vertex<V, E> {
-        match self.guts.get_mut(id.get_index()) {
+        match self.guts.get_mut(id.index()) {
             Some(Some(vertex)) if vertex.same_id(id) => vertex,
             Some(Some(_)) => panic!("The Id {:?} is of an invalid generation. It does not correspond to any vertices in this graph", id),
             Some(None) => panic!("No vertex found for Id {:?}. It has likely been removed from the graph.", id),
