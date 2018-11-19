@@ -133,7 +133,7 @@ impl<V, E> PGraph<V, E> {
 
     /// If there exists an outgoing edge from `source` to `sink`, returns a reference to that edge's value. Otherwise, returns `None`.
     #[must_use]
-    pub fn get_edge(&self, source: Id, sink: Id) -> Option<&E> {
+    pub fn edge(&self, source: Id, sink: Id) -> Option<&E> {
         self.get(source).and_then(|v| v.get_cost(sink))
     }
 
@@ -331,7 +331,7 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
 
     /// If there exists an outgoing edge from `source` to `sink`, returns a mutable reference to that edge's value. Otherwise, returns `None`.
     #[must_use]
-    pub fn get_edge_mut(&mut self, source: Id, sink: Id) -> Option<&mut E> {
+    pub fn edge_mut(&mut self, source: Id, sink: Id) -> Option<&mut E> {
         self.get_mut(source).and_then(|v| v.get_cost_mut(sink))
     }
 

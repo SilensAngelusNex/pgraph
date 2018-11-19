@@ -45,7 +45,7 @@ impl<V, E> Vertex<V, E> {
     /// Returns the weight of the edge from this vertex to `sink`, or `None` if such an edge doesn't exist.
     #[must_use]
     pub fn get_cost(&self, sink: Id) -> Option<&E> {
-        self.adj.get_edge(sink)
+        self.adj.edge(sink)
     }
 
     /// Returns `true` iff there exists an edge from this vertex to `sink`
@@ -94,7 +94,7 @@ impl<V, E: Clone> Vertex<V, E> {
     /// Returns a mutable reference to the weight of the edge from this vertex to sink, or `None` if one doesn't exist.
     #[must_use]
     pub fn get_cost_mut(&mut self, sink: Id) -> Option<&mut E> {
-        self.adj.get_edge_mut(sink)
+        self.adj.edge_mut(sink)
     }
 
     /// Removes the edge from this vertex to `sink`.
