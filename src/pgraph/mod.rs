@@ -62,8 +62,8 @@ impl<V, E> PGraph<V, E> {
     /// Gets the current generation of the PGraph's IdGen
     #[cfg(test)]
     #[must_use]
-    pub fn get_gen(&self) -> usize {
-        self.idgen.get_gen()
+    pub fn generation(&self) -> usize {
+        self.idgen.generation()
     }
 
     /// Counts the number of empty (`None`) slots in the underlying vertex Vector

@@ -27,7 +27,7 @@ impl Id {
     /// what that generation is, since the generation can be nondeterministic.
     #[must_use]
     #[cfg(test)]
-    pub fn get_gen(&self) -> usize {
+    pub fn generation(&self) -> usize {
         self.generation
     }
 
@@ -81,7 +81,7 @@ impl IdGen {
 
     /// Gets the IdGen's current generation
     #[cfg(test)]
-    pub(crate) fn get_gen(&self) -> usize {
+    pub(crate) fn generation(&self) -> usize {
         self.current_gen
     }
 }

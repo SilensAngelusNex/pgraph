@@ -5,11 +5,11 @@ mod panics;
 #[test]
 fn test_add_vertices() {
     let (v, g) = create_vertices();
-    let gen = g.get_gen();
+    let gen = g.generation();
 
     for (i, id) in v.into_iter().enumerate() {
         assert_eq!(g[(id,)], i + 1);
-        assert_eq!(gen, id.get_gen());
+        assert_eq!(gen, id.generation());
     }
 }
 
@@ -230,10 +230,10 @@ fn test_add_all() {
 fn test_debug() {
     let (a_ids, mut a) = create_vertices();
     add_edges(&a_ids, &mut a);
-    let before_gen = a.get_gen();
+    let before_gen = a.generation();
     a.remove_mut(a_ids[0]);
     a.disconnect_mut(a_ids[3], a_ids[1]);
-    let after_gen = a.get_gen();
+    let after_gen = a.generation();
 
     let result = format!("{:?}", a);
     let expected = format!(
