@@ -38,7 +38,7 @@ impl<V, E> Vertex<V, E> {
 
     /// Returns this vertex's Id
     #[must_use]
-    pub fn get_id(&self) -> &Id {
+    pub fn id(&self) -> &Id {
         &self.id
     }
 

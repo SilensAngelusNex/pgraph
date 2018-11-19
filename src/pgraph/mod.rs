@@ -190,7 +190,7 @@ impl<V, E> PGraph<V, E> {
     #[must_use]
     pub fn ids(&self) -> impl Iterator<Item = &Id> {
         self.guts.iter().filter_map(|v_opt| match v_opt {
-            Some(v) => Some(v.get_id()),
+            Some(v) => Some(v.id()),
             None => None,
         })
     }
@@ -221,7 +221,7 @@ impl<V, E> PGraph<V, E> {
     #[must_use]
     pub fn vertices_with_edge_to(&self, sink: Id) -> impl Iterator<Item = &Id> {
         self.guts.iter().filter_map(move |v_opt| match v_opt {
-            Some(v) if v.is_connected(sink) => Some(v.get_id()),
+            Some(v) if v.is_connected(sink) => Some(v.id()),
             _ => None,
         })
     }
@@ -318,12 +318,12 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
         let mut result = Self::new();
         let mut ids = HashMap::new();
         for v in self {
-            ids.insert(v.get_id(), result.add_mut(v.get_data().clone()));
+            ids.insert(v.id(), result.add_mut(v.get_data().clone()));
         }
 
         for source in self {
             for (sink, weight) in source {
-                result.connect_mut(ids[source.get_id()], ids[sink], weight.clone())
+                result.connect_mut(ids[source.id()], ids[sink], weight.clone())
             }
         }
         result
