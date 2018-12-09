@@ -1,6 +1,6 @@
 use self::vertex::adj::Edge;
 use self::vertex::Vertex;
-use id::{Id, IdGen};
+use crate::id::{Id, IdGen};
 use rpds::Vector;
 use std::borrow::Cow;
 use std::collections::HashMap;

@@ -2,6 +2,7 @@
 name = "pgraph"
 version = "0.1.0"
 authors = ["Weston Carvalho <carvalhoweston@gmail.com>"]
+edition = "2018" 
 
 [dependencies]
 rpds = { git = "https://github.com/orium/rpds.git" } 

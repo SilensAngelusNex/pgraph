@@ -6,17 +6,13 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-extern crate rpds;
-#[cfg(test)]
-#[macro_use]
-extern crate more_asserts;
 mod id;
 mod pgraph;
 
-pub use id::Id;
-pub use pgraph::vertex::adj::Edge;
-pub use pgraph::vertex::Vertex;
-pub use pgraph::PGraph;
+pub use crate::id::Id;
+pub use crate::pgraph::vertex::adj::Edge;
+pub use crate::pgraph::vertex::Vertex;
+pub use crate::pgraph::PGraph;
 
 #[cfg(test)]
 mod tests;

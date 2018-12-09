@@ -1,5 +1,5 @@
 use self::adj::AdjList;
-use id::Id;
+use crate::id::Id;
 use std::fmt::{Debug, Error, Formatter};
 use std::iter::IntoIterator;
 use std::ops::{Index, IndexMut};
