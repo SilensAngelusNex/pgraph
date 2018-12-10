@@ -3,13 +3,14 @@ use crate::id::Id;
 use std::fmt::{Debug, Error, Formatter};
 use std::iter::IntoIterator;
 use std::ops::{Index, IndexMut};
+use std::sync::Arc;
 
 pub mod adj;
 
 /// Holds the data for a single PGraph vertex. Contains the vertex [Id](struct.Id.html), the vertex's data, and the vertex's neighbors.
 pub struct Vertex<V, E> {
     id: Id,
-    data: V,
+    data: Arc<V>,
     adj: AdjList<E>,
 }
 
@@ -19,7 +20,7 @@ impl<V: Debug, E: Debug> Debug for Vertex<V, E> {
     }
 }
 
-impl<V: Clone, E> Clone for Vertex<V, E> {
+impl<V, E> Clone for Vertex<V, E> {
     fn clone(&self) -> Self {
         Vertex {
             id: self.id,
@@ -60,18 +61,12 @@ impl<V, E> Vertex<V, E> {
         self.adj.len()
     }
 
-    /// Returns a mutable reference to the data on this vertex
-    #[must_use]
-    pub fn get_data_mut(&mut self) -> &mut V {
-        &mut self.data
-    }
-
     /// Creates a vertex from an Id and vertex data. The vertex starts with no neighbors.
     #[must_use]
     pub(super) fn from(id: Id, data: V) -> Self {
         Vertex {
             id,
-            data,
+            data: Arc::new(data),
             adj: AdjList::new(),
         }
     }
@@ -87,6 +82,14 @@ impl<V, E> Vertex<V, E> {
     /// This is `pub(super)` instead of `pub` because the vertex has no way to check whether `sink` actually exists in the PGraph.
     pub(super) fn connect_to(&mut self, sink: Id, weight: E) {
         self.adj.add_edge(sink, weight)
+    }
+}
+
+impl<V: Clone, E> Vertex<V, E> {
+    /// Returns a mutable reference to the data on this vertex
+    #[must_use]
+    pub fn get_data_mut(&mut self) -> &mut V {
+        Arc::make_mut(&mut self.data)
     }
 }
 

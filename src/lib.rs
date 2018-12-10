@@ -10,7 +10,6 @@ mod id;
 mod pgraph;
 
 pub use crate::id::Id;
-pub use crate::pgraph::vertex::adj::Edge;
 pub use crate::pgraph::vertex::Vertex;
 pub use crate::pgraph::PGraph;
 

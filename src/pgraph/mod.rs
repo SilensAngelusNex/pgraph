@@ -1,7 +1,6 @@
-use self::vertex::adj::Edge;
 use self::vertex::Vertex;
 use crate::id::{Id, IdGen};
-use rpds::Vector;
+use im::Vector;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt::{Debug, Error, Formatter};
@@ -113,7 +112,7 @@ impl<V, E> PGraph<V, E> {
     #[must_use]
     pub fn get(&self, id: Id) -> Option<&Vertex<V, E>> {
         match self.guts.get(id.get_index()) {
-            Some(Some(vertex)) if vertex.same_id(id) => Some(vertex),
+            Some(Some(vertex)) if vertex.same_id(id) => Some(&*vertex),
             _ => None,
         }
     }
@@ -153,12 +152,12 @@ impl<V, E> PGraph<V, E> {
         match self.find_empty() {
             Some(index) => {
                 let id = self.idgen.create_id(index);
-                self.guts.set_mut(index, Some(Vertex::from(id, data)));
+                self.guts.set(index, Some(Vertex::from(id, data)));
                 id
             }
             None => {
                 let id = self.idgen.create_id(self.guts.len());
-                self.guts.push_back_mut(Some(Vertex::from(id, data)));
+                self.guts.push_back(Some(Vertex::from(id, data)));
                 id
             }
         }
@@ -228,7 +227,7 @@ impl<V, E> PGraph<V, E> {
 
     /// Returns an iterator over all wieghts of edges existing in the PGraph that _start_ at `source`.
     #[must_use]
-    pub fn neighbors(&self, source: Id) -> impl Iterator<Item = &Edge<E>> {
+    pub fn neighbors(&self, source: Id) -> impl Iterator<Item = (&Id, &E)> {
         self.get(source)
             .map(|v| v.into_iter())
             .into_iter()
@@ -457,7 +456,7 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
 
     /// Removes a vertex without incrementing the PGraph's generation.
     fn remove_mut_no_inc(&mut self, id: Id) {
-        self.guts.set_mut(id.get_index(), None);
+        self.guts.set(id.get_index(), None);
         self.disconnect_all_inc_mut(id);
     }
 
@@ -557,6 +556,7 @@ fn remove_all<'a, V: Clone, E: Clone, T: Into<Id>, I: IntoIterator<Item = T>>(
         remove(cow, into_id.into()) || changed
     })
 }
+
 
 type GutsIter<'a, V, E> = <&'a GraphInternal<V, E> as IntoIterator>::IntoIter;
 type VertexDeref<'a, V, E> = fn(&'a Option<Vertex<V, E>>) -> Option<&'a Vertex<V, E>>;

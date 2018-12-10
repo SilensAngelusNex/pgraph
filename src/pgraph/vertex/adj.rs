@@ -1,11 +1,12 @@
 use crate::id::Id;
-use rpds::Vector;
+use im::Vector;
 use std::fmt::{Debug, Error, Formatter};
 use std::iter::{FilterMap, IntoIterator};
 use std::ops::{Index, IndexMut};
+use std::sync::Arc;
 
 /// Contains the `Id` of the sink vertex and the weight
-pub type Edge<E> = (Id, E);
+pub type Edge<E> = (Id, Arc<E>);
 
 /// Struct to manage a vertex's adjacencies without having to care about the vertex itself.
 pub(super) struct AdjList<E> {
@@ -82,9 +83,9 @@ impl<E> AdjList<E> {
     pub(super) fn add_edge(&mut self, sink: Id, weight: E) {
         let mut new_edges = self.edges.clone();
         while new_edges.len() <= sink.get_index() {
-            new_edges.push_back_mut(None);
+            new_edges.push_back(None);
         }
-        new_edges.set_mut(sink.get_index(), Some((sink, weight)));
+        new_edges.set(sink.get_index(), Some((sink, Arc::new(weight))));
         self.edges = new_edges;
     }
 }
@@ -97,7 +98,7 @@ impl<E: Clone> AdjList<E> {
         let e = self.edges.get_mut(sink.get_index());
         if let Some(Some((id, weight))) = e {
             if sink == *id {
-                Some(weight)
+                Some(Arc::make_mut(weight))
             } else {
                 None
             }
@@ -165,7 +166,7 @@ impl<'a, E: Clone> IndexMut<Id> for AdjList<E> {
     }
 }
 
-pub type IterItem<'a, E> = &'a Edge<E>;
+pub type IterItem<'a, E> = (&'a Id, &'a E);
 pub type Iter<'a, E> = FilterMap<
     <&'a Vector<Option<Edge<E>>> as IntoIterator>::IntoIter,
     fn(&'a Option<Edge<E>>) -> Option<IterItem<'a, E>>,
@@ -176,6 +177,12 @@ impl<'a, E> IntoIterator for &'a AdjList<E> {
     type IntoIter = Iter<'a, E>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.edges.iter().filter_map(|e| e.as_ref())
+        self.edges.iter().filter_map(|e| {
+            if let Some((id, arc_weight)) = e.as_ref() {
+                Some((id, &**arc_weight))
+            } else {
+                None
+            }
+        })
     }
 }
