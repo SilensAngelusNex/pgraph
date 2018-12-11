@@ -5,11 +5,11 @@ mod panics;
 #[test]
 fn test_add_vertices() {
     let (v, g) = create_vertices();
-    let gen = g.get_gen();
+    let gen = g.generation();
 
     for (i, id) in v.into_iter().enumerate() {
         assert_eq!(g[(id,)], i + 1);
-        assert_eq!(gen, id.get_gen());
+        assert_eq!(gen, id.generation());
     }
 }
 
@@ -20,14 +20,14 @@ fn test_get() {
     add_edges(&a_ids, &mut a);
 
     for id in a_ids {
-        assert!(a.get_data(id).is_some());
+        assert!(a.vertex_data(id).is_some());
         for (sink, _) in a.neighbors(id) {
-            assert!(a.get_weight(id, *sink).is_some());
+            assert!(a.weight(id, *sink).is_some());
         }
     }
 
     for id in b_ids {
-        assert!(a.get_data(id).is_none());
+        assert!(a.vertex_data(id).is_none());
         assert!(a.neighbors(id).next().is_none());
     }
 }
@@ -45,7 +45,7 @@ fn test_connect_mut() {
 
     for source in &g {
         for (sink, weight) in source {
-            let calc_weight = source.get_data() * 10 + g[(*sink,)];
+            let calc_weight = source.data() * 10 + g[(*sink,)];
             assert_eq!(weight, &calc_weight);
         }
     }
@@ -53,7 +53,7 @@ fn test_connect_mut() {
     for source in g.ids() {
         for sink in g.ids() {
             if g.has_edge(*source, *sink) {
-                let calc_weight = g[(*source,)] * 10 + g[*sink].get_data();
+                let calc_weight = g[(*source,)] * 10 + g[*sink].data();
                 assert_eq!(g[(*source, *sink)], calc_weight);
             }
         }
@@ -67,8 +67,8 @@ fn test_get_mut() {
     let v_id = ids[v - 1];
 
     g[(v_id,)] *= 2;
-    *g.get_data_mut(v_id).unwrap() *= 2;
-    *g[v_id].get_data_mut() *= 2;
+    *g.vertex_data_mut(v_id).unwrap() *= 2;
+    *g[v_id].data_mut() *= 2;
 
     assert_eq!(g[(v_id,)], v * 8);
 }
@@ -93,8 +93,8 @@ fn test_remove() {
     assert!(g.ids().count() < ids.iter().count());
 
     let new_id = g.add_mut(6);
-    let old_v = g.get(v_id);
-    let new_v = g.get(new_id);
+    let old_v = g.vertex(v_id);
+    let new_v = g.vertex(new_id);
 
     assert!(old_v.is_none());
     assert!(new_v.is_some());
@@ -148,9 +148,9 @@ fn test_recreate() {
         let a_v = &a[*a_id];
         let b_v = &b[*b_id];
 
-        assert_eq!(a_v.get_data(), b_v.get_data());
+        assert_eq!(a_v.data(), b_v.data());
         for (a_sink, b_sink) in a.ids().zip(b.ids()) {
-            assert_eq!(a_v.get_cost(*a_sink), b_v.get_cost(*b_sink))
+            assert_eq!(a_v.cost(*a_sink), b_v.cost(*b_sink))
         }
     }
 
@@ -170,9 +170,9 @@ fn test_edges() {
     assert!(a.try_remove(b_ids[0]).is_none());
 
     a[(a_ids[0], a_ids[1])] *= 2;
-    *a.get_weight_mut(a_ids[0], a_ids[1]).unwrap() *= 2;
+    *a.weight_mut(a_ids[0], a_ids[1]).unwrap() *= 2;
     assert_eq!(b[(b_ids[0], b_ids[1])] * 4, a[(a_ids[0], a_ids[1])]);
-    assert!(a.get_weight_mut(a_ids[0], a_ids[0]).is_none());
+    assert!(a.weight_mut(a_ids[0], a_ids[0]).is_none());
 
     let c = b.disconnect(b_ids[2], b_ids[3]);
     assert!(b.has_edge(b_ids[2], b_ids[3]));
@@ -230,10 +230,10 @@ fn test_add_all() {
 fn test_debug() {
     let (a_ids, mut a) = create_vertices();
     add_edges(&a_ids, &mut a);
-    let before_gen = a.get_gen();
+    let before_gen = a.generation();
     a.remove_mut(a_ids[0]);
     a.disconnect_mut(a_ids[3], a_ids[1]);
-    let after_gen = a.get_gen();
+    let after_gen = a.generation();
 
     let result = format!("{:?}", a);
     let expected = format!(
@@ -253,17 +253,17 @@ fn test_debug() {
 }
 
 #[test]
-fn test_get_edge_from_vertex() {
+fn test_edge_from_vertex() {
     let (a_ids, mut a) = create_vertices();
     let (b_ids, _) = create_vertices();
     add_edges(&a_ids, &mut a);
 
-    let v0 = a.get_mut(a_ids[0]).unwrap();
+    let v0 = a.vertex_mut(a_ids[0]).unwrap();
     assert_eq!(v0[a_ids[1]], 12);
 
-    assert!(v0.get_cost(b_ids[1]).is_none());
-    assert!(v0.get_cost_mut(b_ids[1]).is_none());
-    assert!(v0.get_cost_mut(a_ids[1]).is_some());
+    assert!(v0.cost(b_ids[1]).is_none());
+    assert!(v0.cost_mut(b_ids[1]).is_none());
+    assert!(v0.cost_mut(a_ids[1]).is_some());
 
     assert!(v0.disconnect(a_ids[1]));
     assert!(!v0.disconnect(b_ids[1]));

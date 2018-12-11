@@ -33,20 +33,20 @@ impl<V, E> Clone for Vertex<V, E> {
 impl<V, E> Vertex<V, E> {
     /// Returns a reference to the data on this vertex
     #[must_use]
-    pub fn get_data(&self) -> &V {
+    pub fn data(&self) -> &V {
         &self.data
     }
 
     /// Returns this vertex's Id
     #[must_use]
-    pub fn get_id(&self) -> &Id {
+    pub fn id(&self) -> &Id {
         &self.id
     }
 
     /// Returns the weight of the edge from this vertex to `sink`, or `None` if such an edge doesn't exist.
     #[must_use]
-    pub fn get_cost(&self, sink: Id) -> Option<&E> {
-        self.adj.get_edge(sink)
+    pub fn cost(&self, sink: Id) -> Option<&E> {
+        self.adj.edge(sink)
     }
 
     /// Returns `true` iff there exists an edge from this vertex to `sink`
@@ -88,7 +88,7 @@ impl<V, E> Vertex<V, E> {
 impl<V: Clone, E> Vertex<V, E> {
     /// Returns a mutable reference to the data on this vertex
     #[must_use]
-    pub fn get_data_mut(&mut self) -> &mut V {
+    pub fn data_mut(&mut self) -> &mut V {
         Arc::make_mut(&mut self.data)
     }
 }
@@ -96,8 +96,8 @@ impl<V: Clone, E> Vertex<V, E> {
 impl<V, E: Clone> Vertex<V, E> {
     /// Returns a mutable reference to the weight of the edge from this vertex to sink, or `None` if one doesn't exist.
     #[must_use]
-    pub fn get_cost_mut(&mut self, sink: Id) -> Option<&mut E> {
-        self.adj.get_edge_mut(sink)
+    pub fn cost_mut(&mut self, sink: Id) -> Option<&mut E> {
+        self.adj.edge_mut(sink)
     }
 
     /// Removes the edge from this vertex to `sink`.

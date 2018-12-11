@@ -37,7 +37,7 @@ g.connect_mut(v3, v4, 34);
 let mut h = g.remove(v1);
 let v6 = h.add_mut(6);
 h.connect_mut(v6, v5, 65);
-*h.get_edge_mut(v5, v3).unwrap() = 130;
+*h.edge_mut(v5, v3).unwrap() = 130;
 
 let i = h.clone();
 

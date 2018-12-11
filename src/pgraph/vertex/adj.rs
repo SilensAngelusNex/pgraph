@@ -58,14 +58,14 @@ impl<E> AdjList<E> {
     ///
     /// Runs in O(1)
     pub(super) fn has_edge(&self, sink: Id) -> bool {
-        self.get_edge(sink).is_some()
+        self.edge(sink).is_some()
     }
 
     /// Returns the `Edge` that goes to `sink`, or `None` if such an edge doesn't exist.
     ///
     /// Runs in O(1)
-    pub(super) fn get_edge(&self, sink: Id) -> Option<&E> {
-        let e = self.edges.get(sink.get_index());
+    pub(super) fn edge(&self, sink: Id) -> Option<&E> {
+        let e = self.edges.get(sink.index());
         if let Some(Some((id, weight))) = e {
             if sink == *id {
                 Some(weight)
@@ -82,10 +82,10 @@ impl<E> AdjList<E> {
     /// Worst case runs in O(N), where N is the maximum number of vertices *currently* in the graph. Amortized O(1).
     pub(super) fn add_edge(&mut self, sink: Id, weight: E) {
         let mut new_edges = self.edges.clone();
-        while new_edges.len() <= sink.get_index() {
+        while new_edges.len() <= sink.index() {
             new_edges.push_back(None);
         }
-        new_edges.set(sink.get_index(), Some((sink, Arc::new(weight))));
+        new_edges.set_mut(sink.index(), Some((sink, Arc::new(weight))));
         self.edges = new_edges;
     }
 }
@@ -94,8 +94,8 @@ impl<E: Clone> AdjList<E> {
     /// Gets a mutable reference to the weight of the edge that ends at `sink`, or `None` if no such edge exists.
     ///
     /// Runs in O(1)
-    pub(super) fn get_edge_mut(&mut self, sink: Id) -> Option<&mut E> {
-        let e = self.edges.get_mut(sink.get_index());
+    pub(super) fn edge_mut(&mut self, sink: Id) -> Option<&mut E> {
+        let e = self.edges.get_mut(sink.index());
         if let Some(Some((id, weight))) = e {
             if sink == *id {
                 Some(Arc::make_mut(weight))
@@ -112,7 +112,7 @@ impl<E: Clone> AdjList<E> {
     /// Runs in O(1)
     pub(super) fn disconnect_edge(&mut self, sink: Id) -> bool {
         let mut result = false;
-        let e = self.edges.get_mut(sink.get_index());
+        let e = self.edges.get_mut(sink.index());
         if let Some(edge) = e {
             let take = if let Some((id, _)) = edge {
                 sink == *id
@@ -156,13 +156,13 @@ impl<'a, E> Index<Id> for AdjList<E> {
     type Output = E;
 
     fn index(&self, id: Id) -> &E {
-        self.get_edge(id).unwrap()
+        self.edge(id).unwrap()
     }
 }
 
 impl<'a, E: Clone> IndexMut<Id> for AdjList<E> {
     fn index_mut(&mut self, id: Id) -> &mut E {
-        self.get_edge_mut(id).unwrap()
+        self.edge_mut(id).unwrap()
     }
 }
 

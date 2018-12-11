@@ -27,14 +27,14 @@ impl Id {
     /// what that generation is, since the generation can be nondeterministic.
     #[must_use]
     #[cfg(test)]
-    pub fn get_gen(&self) -> usize {
+    pub fn generation(&self) -> usize {
         self.generation
     }
 
     /// Allows this crate to get the index out of an Id.
     /// Considered using Into<usize>, but that makes users able to use the conversion.
     #[must_use]
-    pub(crate) fn get_index(&self) -> usize {
+    pub(crate) fn index(&self) -> usize {
         self.index
     }
 }
@@ -81,7 +81,7 @@ impl IdGen {
 
     /// Gets the IdGen's current generation
     #[cfg(test)]
-    pub(crate) fn get_gen(&self) -> usize {
+    pub(crate) fn generation(&self) -> usize {
         self.current_gen
     }
 }
@@ -144,8 +144,8 @@ mod test {
     }
 
     fn assert_same_index(id1: &Id, id2: &Id) {
-        let a: usize = id1.get_index();
-        let b: usize = id2.get_index();
+        let a: usize = id1.index();
+        let b: usize = id2.index();
 
         assert_eq!(a, b);
     }
