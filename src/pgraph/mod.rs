@@ -216,9 +216,9 @@ impl<V, E> PGraph<V, E> {
             .map(|(_, weight)| weight)
     }
 
-    /// Returns an iterator over all wieghts of edges existing in the PGraph that _end_ at `sink`.
+    /// Returns an iterator over all vertices in the PGraph with an edge that _ends_ at `sink`.
     #[must_use]
-    pub fn vertices_with_edge_to(&self, sink: Id) -> impl Iterator<Item = &Id> {
+    pub fn predecessors(&self, sink: Id) -> impl Iterator<Item = &Id> {
         self.guts.iter().filter_map(move |v_opt| match v_opt {
             Some(v) if v.is_connected(sink) => Some(v.id()),
             _ => None,
@@ -227,7 +227,7 @@ impl<V, E> PGraph<V, E> {
 
     /// Returns an iterator over all wieghts of edges existing in the PGraph that _start_ at `source`.
     #[must_use]
-    pub fn neighbors(&self, source: Id) -> impl Iterator<Item = (&Id, &E)> {
+    pub fn outbound_edges(&self, source: Id) -> impl Iterator<Item = (&Id, &E)> {
         self.vertex(source)
             .map(|v| v.into_iter())
             .into_iter()
@@ -477,7 +477,7 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
 
     /// Disconnects all the edges that end at `sink`.
     fn disconnect_all_inc_mut(&mut self, sink: Id) -> bool {
-        let inc: Vec<Id> = self.vertices_with_edge_to(sink).cloned().collect();
+        let inc: Vec<Id> = self.predecessors(sink).cloned().collect();
         inc.into_iter().fold(false, |init, source| {
             self.disconnect_mut(source, sink) || init
         })
