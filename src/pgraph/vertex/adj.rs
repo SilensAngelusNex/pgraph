@@ -85,7 +85,7 @@ impl<E> AdjList<E> {
         while new_edges.len() <= sink.index() {
             new_edges.push_back(None);
         }
-        new_edges.set_mut(sink.index(), Some((sink, Arc::new(weight))));
+        new_edges.set(sink.index(), Some((sink, Arc::new(weight))));
         self.edges = new_edges;
     }
 }
