@@ -21,14 +21,14 @@ fn test_get() {
 
     for id in a_ids {
         assert!(a.vertex_data(id).is_some());
-        for (sink, _) in a.neighbors(id) {
+        for (sink, _) in a.outbound_edges(id) {
             assert!(a.weight(id, *sink).is_some());
         }
     }
 
     for id in b_ids {
         assert!(a.vertex_data(id).is_none());
-        assert!(a.neighbors(id).next().is_none());
+        assert!(a.outbound_edges(id).next().is_none());
     }
 }
 
