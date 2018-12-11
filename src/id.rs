@@ -95,6 +95,7 @@ impl Clone for IdGen {
 #[cfg(test)]
 mod test {
     use super::*;
+    use more_asserts::assert_lt;
 
     #[test]
     fn test_next_gen() {
