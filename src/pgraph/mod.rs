@@ -130,9 +130,9 @@ impl<V, E> PGraph<V, E> {
         self.get(source).map_or(false, |v| v.is_connected(sink))
     }
 
-    /// If there exists an outgoing edge from `source` to `sink`, returns a reference to that edge's value. Otherwise, returns `None`.
+    /// If there exists an outgoing edge from `source` to `sink`, returns a reference to that edge's weight. Otherwise, returns `None`.
     #[must_use]
-    pub fn get_edge(&self, source: Id, sink: Id) -> Option<&E> {
+    pub fn get_weight(&self, source: Id, sink: Id) -> Option<&E> {
         self.get(source).and_then(|v| v.get_cost(sink))
     }
 
@@ -248,9 +248,9 @@ impl<V: Clone, E> PGraph<V, E> {
     /// Returns the new, modified version of the PGraph.  
     /// Panics if `source` and/or `sink` is not in the PGraph
     #[must_use]
-    pub fn connect(&self, source: Id, sink: Id, edge: E) -> Self {
+    pub fn connect(&self, source: Id, sink: Id, weight: E) -> Self {
         let mut result = self.clone();
-        result.connect_mut(source, sink, edge);
+        result.connect_mut(source, sink, weight);
         result
     }
 
@@ -258,10 +258,10 @@ impl<V: Clone, E> PGraph<V, E> {
     ///
     /// Returns the new, modified version of the PGraph, or `None` if `source` and/or `sink` is not in the PGraph.
     #[must_use]
-    pub fn try_connect(&self, source: Id, sink: Id, edge: E) -> Option<Self> {
+    pub fn try_connect(&self, source: Id, sink: Id, weight: E) -> Option<Self> {
         let mut result = Cow::Borrowed(self);
         if result.has_vertex(source) && result.has_vertex(sink) {
-            result.to_mut().connect_mut(source, sink, edge);
+            result.to_mut().connect_mut(source, sink, weight);
             Some(result.into_owned())
         } else {
             None
@@ -271,9 +271,9 @@ impl<V: Clone, E> PGraph<V, E> {
     /// Creates an edge from `source` to `sink`, in-place. If there already exists an edge, it will be overwritten. (Vertices can have edges to themselves.)
     ///
     /// Panics if `source` and/or `sink` is not in the PGraph
-    pub fn connect_mut(&mut self, source: Id, sink: Id, edge: E) {
+    pub fn connect_mut(&mut self, source: Id, sink: Id, weight: E) {
         if self.has_vertex(sink) {
-            self[source].connect_to(sink, edge)
+            self[source].connect_to(sink, weight)
         } else {
             panic!(
                 "The sink vertex with Id {:?} was not found in the graph.",
@@ -285,10 +285,10 @@ impl<V: Clone, E> PGraph<V, E> {
     /// Tries to create an edge from `source` to `sink`. If there already exists an edge, it will be overwritten. (Vertices can have edges to themselves.)
     ///
     /// Returns `false` iff the edge couldn't be created (i.e. `source` and/or `sink` is not in the PGraph)
-    pub fn try_connect_mut(&mut self, source: Id, sink: Id, edge: E) -> bool {
+    pub fn try_connect_mut(&mut self, source: Id, sink: Id, weight: E) -> bool {
         if self.has_vertex(sink) {
             if let Some(v) = self.get_mut(source) {
-                v.connect_to(sink, edge);
+                v.connect_to(sink, weight);
                 return true;
             }
         };
@@ -328,9 +328,9 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
         result
     }
 
-    /// If there exists an outgoing edge from `source` to `sink`, returns a mutable reference to that edge's value. Otherwise, returns `None`.
+    /// If there exists an outgoing edge from `source` to `sink`, returns a mutable reference to that edge's weight. Otherwise, returns `None`.
     #[must_use]
-    pub fn get_edge_mut(&mut self, source: Id, sink: Id) -> Option<&mut E> {
+    pub fn get_weight_mut(&mut self, source: Id, sink: Id) -> Option<&mut E> {
         self.get_mut(source).and_then(|v| v.get_cost_mut(sink))
     }
 
