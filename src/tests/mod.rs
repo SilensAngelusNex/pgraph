@@ -22,7 +22,7 @@ fn test_get() {
     for id in a_ids {
         assert!(a.vertex_data(id).is_some());
         for (sink, _) in a.neighbors(id) {
-            assert!(a.edge(id, *sink).is_some());
+            assert!(a.weight(id, *sink).is_some());
         }
     }
 
@@ -170,9 +170,9 @@ fn test_edges() {
     assert!(a.try_remove(b_ids[0]).is_none());
 
     a[(a_ids[0], a_ids[1])] *= 2;
-    *a.edge_mut(a_ids[0], a_ids[1]).unwrap() *= 2;
+    *a.weight_mut(a_ids[0], a_ids[1]).unwrap() *= 2;
     assert_eq!(b[(b_ids[0], b_ids[1])] * 4, a[(a_ids[0], a_ids[1])]);
-    assert!(a.edge_mut(a_ids[0], a_ids[0]).is_none());
+    assert!(a.weight_mut(a_ids[0], a_ids[0]).is_none());
 
     let c = b.disconnect(b_ids[2], b_ids[3]);
     assert!(b.has_edge(b_ids[2], b_ids[3]));
