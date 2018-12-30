@@ -5,7 +5,7 @@
 PGraph provides a persistent graph data structure with the following features:
 * Supports optional data for vertices and edges (For example, `PGraph<(), E>` has data on edges only.)
 * Directed edges, for that sweet, sweet versitility
-* Structural sharing built on [rpds](https://crates.io/crates/rpds) data structures
+* Structural sharing built on [im](https://crates.io/crates/im) data structures
 * TODO: Common graph algorithms (Dijkstra's, Bellman-Ford, and Floyd-Warshall are the first ones I'm planning, but make an issue if there's another that you want.)
 
 ## Setup

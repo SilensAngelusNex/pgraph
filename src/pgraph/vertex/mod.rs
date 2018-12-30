@@ -45,8 +45,8 @@ impl<V, E> Vertex<V, E> {
 
     /// Returns the weight of the edge from this vertex to `sink`, or `None` if such an edge doesn't exist.
     #[must_use]
-    pub fn cost(&self, sink: Id) -> Option<&E> {
-        self.adj.edge(sink)
+    pub fn weight(&self, sink: Id) -> Option<&E> {
+        self.adj.weight(sink)
     }
 
     /// Returns `true` iff there exists an edge from this vertex to `sink`
@@ -80,7 +80,7 @@ impl<V, E> Vertex<V, E> {
     /// Creates an edge to `sink` with the given weight.
     ///
     /// This is `pub(super)` instead of `pub` because the vertex has no way to check whether `sink` actually exists in the PGraph.
-    pub(super) fn connect_to(&mut self, sink: Id, weight: E) {
+    pub(super) fn connect_to(&mut self, sink: Id, weight: E) -> &mut E {
         self.adj.add_edge(sink, weight)
     }
 }
@@ -96,8 +96,12 @@ impl<V: Clone, E> Vertex<V, E> {
 impl<V, E: Clone> Vertex<V, E> {
     /// Returns a mutable reference to the weight of the edge from this vertex to sink, or `None` if one doesn't exist.
     #[must_use]
-    pub fn cost_mut(&mut self, sink: Id) -> Option<&mut E> {
-        self.adj.edge_mut(sink)
+    pub fn weight_mut(&mut self, sink: Id) -> Option<&mut E> {
+        self.adj.weight_mut(sink)
+    }
+
+    pub(crate) fn make_edge_mut(&mut self, sink: Id) -> &mut std::option::Option<(Id, Arc<E>)> {
+        self.adj.make_edge_mut(sink)
     }
 
     /// Removes the edge from this vertex to `sink`.

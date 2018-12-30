@@ -1,4 +1,3 @@
-use self::vertex::Vertex;
 use crate::id::{Id, IdGen};
 use im::Vector;
 use std::borrow::Cow;
@@ -7,7 +6,11 @@ use std::fmt::{Debug, Error, Formatter};
 use std::iter::{FilterMap, IntoIterator};
 use std::ops::{Index, IndexMut};
 
-pub mod vertex;
+mod edge;
+mod vertex;
+
+pub use self::edge::Edge;
+pub use self::vertex::Vertex;
 
 type GraphInternal<V, E> = Vector<Option<Vertex<V, E>>>;
 
@@ -133,7 +136,7 @@ impl<V, E> PGraph<V, E> {
     /// If there exists an outgoing edge from `source` to `sink`, returns a reference to that edge's weight. Otherwise, returns `None`.
     #[must_use]
     pub fn weight(&self, source: Id, sink: Id) -> Option<&E> {
-        self.vertex(source).and_then(|v| v.cost(sink))
+        self.vertex(source).and_then(|v| v.weight(sink))
     }
 
     /// Modifies the PGraph to contain a new vertex containing `data`. (The vertex won't be connected to anything.)
@@ -273,7 +276,7 @@ impl<V: Clone, E> PGraph<V, E> {
     /// Panics if `source` and/or `sink` is not in the PGraph
     pub fn connect_mut(&mut self, source: Id, sink: Id, weight: E) {
         if self.has_vertex(sink) {
-            self[source].connect_to(sink, weight)
+            self[source].connect_to(sink, weight);
         } else {
             panic!(
                 "The sink vertex with Id {:?} was not found in the graph.",
@@ -331,7 +334,14 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
     /// If there exists an outgoing edge from `source` to `sink`, returns a mutable reference to that edge's weight. Otherwise, returns `None`.
     #[must_use]
     pub fn weight_mut(&mut self, source: Id, sink: Id) -> Option<&mut E> {
-        self.vertex_mut(source).and_then(|v| v.cost_mut(sink))
+        self.vertex_mut(source).and_then(|v| v.weight_mut(sink))
+    }
+
+    /// Creates an [Edge](struct.Edge.html), which functions like HashMap's Entry, that can be used to connect `source` and `sink`
+    /// if there is no existing edge, or modify the edge if there is one.
+    #[must_use]
+    pub fn edge(&mut self, source: Id, sink: Id) -> Edge<V, E> {
+        Edge::from(self, source, sink)
     }
 
     /// Removes a vertex and all edges from and to it from the PGraph.

@@ -58,13 +58,13 @@ impl<E> AdjList<E> {
     ///
     /// Runs in O(1)
     pub(super) fn has_edge(&self, sink: Id) -> bool {
-        self.edge(sink).is_some()
+        self.weight(sink).is_some()
     }
 
-    /// Returns the `Edge` that goes to `sink`, or `None` if such an edge doesn't exist.
+    /// Returns the weight of the edge that goes to `sink`, or `None` if such an edge doesn't exist.
     ///
     /// Runs in O(1)
-    pub(super) fn edge(&self, sink: Id) -> Option<&E> {
+    pub(super) fn weight(&self, sink: Id) -> Option<&E> {
         let e = self.edges.get(sink.index());
         if let Some(Some((id, weight))) = e {
             if sink == *id {
@@ -80,13 +80,17 @@ impl<E> AdjList<E> {
     /// Create an edge to `sink` with the given `weight`.
     ///
     /// Worst case runs in O(N), where N is the maximum number of vertices *currently* in the graph. Amortized O(1).
-    pub(super) fn add_edge(&mut self, sink: Id, weight: E) {
-        let mut new_edges = self.edges.clone();
-        while new_edges.len() <= sink.index() {
-            new_edges.push_back(None);
+    pub(super) fn add_edge(&mut self, sink: Id, weight: E) -> &mut E {
+        self.edges = self.edges.clone();
+        while self.edges.len() <= sink.index() {
+            self.edges.push_back(None);
         }
-        new_edges.set(sink.index(), Some((sink, Arc::new(weight))));
-        self.edges = new_edges;
+
+        let element = self.edges.get_mut(sink.index()).unwrap();
+        element.replace((sink, Arc::new(weight)));
+
+        let (_, weight_arc) = element.as_mut().unwrap();
+        Arc::get_mut(weight_arc).unwrap()
     }
 }
 
@@ -94,7 +98,7 @@ impl<E: Clone> AdjList<E> {
     /// Gets a mutable reference to the weight of the edge that ends at `sink`, or `None` if no such edge exists.
     ///
     /// Runs in O(1)
-    pub(super) fn edge_mut(&mut self, sink: Id) -> Option<&mut E> {
+    pub(super) fn weight_mut(&mut self, sink: Id) -> Option<&mut E> {
         let e = self.edges.get_mut(sink.index());
         if let Some(Some((id, weight))) = e {
             if sink == *id {
@@ -105,6 +109,18 @@ impl<E: Clone> AdjList<E> {
         } else {
             None
         }
+    }
+
+    /// Gets a mutable reference to the weight of the edge that ends at `sink`, or `None` if no such edge exists.
+    ///
+    /// Runs in O(1)
+    pub(super) fn make_edge_mut(&mut self, sink: Id) -> &mut std::option::Option<(Id, Arc<E>)> {
+        self.edges = self.edges.clone();
+        while self.edges.len() <= sink.index() {
+            self.edges.push_back(None);
+        }
+
+        &mut self.edges[sink.index()]
     }
 
     /// Deletes the edge that ends at `sink`. Returns false iff that edge didn't exist to begin with.
@@ -156,13 +172,13 @@ impl<'a, E> Index<Id> for AdjList<E> {
     type Output = E;
 
     fn index(&self, id: Id) -> &E {
-        self.edge(id).unwrap()
+        self.weight(id).unwrap()
     }
 }
 
 impl<'a, E: Clone> IndexMut<Id> for AdjList<E> {
     fn index_mut(&mut self, id: Id) -> &mut E {
-        self.edge_mut(id).unwrap()
+        self.weight_mut(id).unwrap()
     }
 }
 

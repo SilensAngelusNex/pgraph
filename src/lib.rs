@@ -10,8 +10,7 @@ mod id;
 mod pgraph;
 
 pub use crate::id::Id;
-pub use crate::pgraph::vertex::Vertex;
-pub use crate::pgraph::PGraph;
+pub use crate::pgraph::{Edge, PGraph, Vertex};
 
 #[cfg(test)]
 mod tests;
