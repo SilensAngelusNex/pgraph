@@ -21,8 +21,8 @@ fn test_get() {
 
     for id in a_ids {
         assert!(a.vertex_data(id).is_some());
-        for (sink, _) in a.outbound_edges(id) {
-            assert!(a.weight(id, *sink).is_some());
+        for (_, sink, _) in a.outbound_edges(id) {
+            assert!(a.weight(id, sink).is_some());
         }
     }
 
@@ -45,16 +45,16 @@ fn test_connect_mut() {
 
     for source in &g {
         for (sink, weight) in source {
-            let calc_weight = source.data() * 10 + g[(*sink,)];
+            let calc_weight = source.data() * 10 + g[(sink,)];
             assert_eq!(weight, &calc_weight);
         }
     }
 
     for source in g.ids() {
         for sink in g.ids() {
-            if g.has_edge(*source, *sink) {
-                let calc_weight = g[(*source,)] * 10 + g[*sink].data();
-                assert_eq!(g[(*source, *sink)], calc_weight);
+            if g.has_edge(source, sink) {
+                let calc_weight = g[(source,)] * 10 + g[sink].data();
+                assert_eq!(g[(source, sink)], calc_weight);
             }
         }
     }
@@ -145,12 +145,12 @@ fn test_recreate() {
     let b = a.recreate();
 
     for (a_id, b_id) in a.ids().zip(b.ids()) {
-        let a_v = &a[*a_id];
-        let b_v = &b[*b_id];
+        let a_v = &a[a_id];
+        let b_v = &b[b_id];
 
         assert_eq!(a_v.data(), b_v.data());
         for (a_sink, b_sink) in a.ids().zip(b.ids()) {
-            assert_eq!(a_v.weight(*a_sink), b_v.weight(*b_sink))
+            assert_eq!(a_v.weight(a_sink), b_v.weight(b_sink))
         }
     }
 
@@ -197,18 +197,18 @@ fn test_remove_all() {
 
     let a_count = a.into_iter().count();
 
-    let c = a.remove_all(&a_ids);
+    let c = a.remove_all(a_ids.iter());
     assert_eq!(c.into_iter().count(), 0);
 
-    let d = a.try_remove_all(&a_ids);
+    let d = a.try_remove_all(a_ids.clone());
     assert!(d.is_some());
-    let e = a.try_remove_all(&b_ids);
+    let e = a.try_remove_all(b_ids.clone());
     assert!(e.is_none());
 
-    a.remove_all_mut(&b_ids);
+    a.remove_all_mut(b_ids.clone());
     assert_eq!(a.into_iter().count(), a_count);
 
-    a.remove_all_mut(&a_ids);
+    a.remove_all_mut(a_ids.clone());
     assert_eq!(a.into_iter().count(), 0);
 }
 

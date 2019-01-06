@@ -1,4 +1,5 @@
 use super::{Id, PGraph, Vertex};
+use std::borrow::Borrow;
 use std::ops::IndexMut;
 use std::sync::Arc;
 
@@ -8,7 +9,9 @@ pub struct Edge<'a, V, E> {
 }
 
 impl<'a, V: Clone, E> Edge<'a, V, E> {
-    pub(crate) fn from(graph: &'a mut PGraph<V, E>, source: Id, sink: Id) -> Self {
+    pub(crate) fn from<T: Borrow<Id>>(graph: &'a mut PGraph<V, E>, source: T, sink: T) -> Self {
+        let sink = sink.borrow();
+
         if !graph.has_vertex(sink) {
             panic!(
                 "No vertex found for Id {:?}. Cannot construct edge to nonexistent vertex.",
@@ -17,19 +20,19 @@ impl<'a, V: Clone, E> Edge<'a, V, E> {
         } else {
             Self {
                 source: graph.index_mut(source),
-                sink,
+                sink: *sink,
             }
         }
     }
 }
 
 impl<'a, V, E> Edge<'a, V, E> {
-    pub fn source(&self) -> &Id {
-        &self.source.id()
+    pub fn source(&self) -> Id {
+        self.source.id()
     }
 
-    pub fn sink(&self) -> &Id {
-        &self.sink
+    pub fn sink(&self) -> Id {
+        self.sink
     }
 }
 

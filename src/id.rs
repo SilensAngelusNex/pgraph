@@ -15,12 +15,6 @@ impl Debug for Id {
     }
 }
 
-impl<'a> From<&'a Id> for Id {
-    fn from(other: &'a Id) -> Self {
-        *other
-    }
-}
-
 impl Id {
     /// Gets the generation of this ID. Should only be needed for debug/testing.
     /// Normal use cases should only care if two Ids generations are equal, not
@@ -123,8 +117,8 @@ mod test {
         c.next_gen();
         let c_first = c.create_id(1);
 
-        assert_same_index(&a_first, &b_first);
-        assert_same_index(&b_first, &c_first);
+        assert_same_index(a_first, b_first);
+        assert_same_index(b_first, c_first);
 
         println!(
             "Generators and ids:\n\ta = {} -> {:?}, \tb = {} -> {:?}, \tc = {} -> {:?}",
@@ -143,7 +137,7 @@ mod test {
         assert_lt!(b1.generation, c1.generation);
     }
 
-    fn assert_same_index(id1: &Id, id2: &Id) {
+    fn assert_same_index(id1: Id, id2: Id) {
         let a: usize = id1.index();
         let b: usize = id2.index();
 
