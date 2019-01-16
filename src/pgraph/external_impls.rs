@@ -161,7 +161,7 @@ impl<V, E> NodeIndexable for PGraph<V, E> {
         let index = a.index();
         let empties_before = self.empties.clone().split(&index).0.len();
 
-        index + empties_before
+        index - empties_before
     }
 
     fn from_index(&self, i: usize) -> Id {
