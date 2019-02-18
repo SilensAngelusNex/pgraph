@@ -1,3 +1,5 @@
+//! Contains implementations of `petgraph` traits so that `PGraph can be used with the `petgraph`'s algorithms.
+
 use super::vertex::Vertex;
 use super::{Id, OutboundIter, PGraph, PredecessorIter};
 use petgraph::visit::IntoNodeReferences;
@@ -159,13 +161,10 @@ impl<V, E> NodeIndexable for PGraph<V, E> {
 
     fn to_index(&self, a: Id) -> usize {
         let index = a.index();
-        let empties_before = self.empties.clone().split(&index).0.len();
-
-        index - empties_before
+        index - self.empties.range(0..index).count()
     }
 
-    fn from_index(&self, i: usize) -> Id {
-        let mut i = i;
+    fn from_index(&self, mut i: usize) -> Id {
         for empty in self.empties.iter().cloned() {
             if empty <= i {
                 i += 1;

@@ -3,7 +3,7 @@ use im::{ordset::OrdSet, Vector};
 use std::borrow::{Borrow, Cow};
 use std::collections::HashMap;
 use std::fmt::{Debug, Error, Formatter};
-use std::iter::{FilterMap, Flatten, IntoIterator, Map};
+use std::iter::{FilterMap, Flatten, FromIterator, IntoIterator, Map};
 use std::ops::{Index, IndexMut};
 
 mod edge;
@@ -20,7 +20,7 @@ type GraphInternal<V, E> = Vector<Option<Vertex<V, E>>>;
 /// Represents a persistent graph with data on each vertex (of type V) and directed, weighted edges.
 /// (Edge weights are of type E.) Uses [Id](struct.Id.html)s as references to vertices.
 ///
-/// All of the `_mut` methods will mutate the PGraph in-place, while the corresponding methods without will clone the existing PGraph and return a modified version.
+/// All of the `_mut` methods will mutate the PGraph in-place, while the corresponding methods without `_mut` will clone the existing PGraph and return a modified version.
 /// All of the `try_` methods will not panic if their non-`try` counterparts would, and do less redundant cloning.
 /// All the graph data is held using structual sharing, so the cloning will be minimally expensive, with respect to both time and memory.
 pub struct PGraph<V, E> {
@@ -100,6 +100,17 @@ impl<V, E> PGraph<V, E> {
     }
 
     /// Checks if the given Id points to a valid [Vertex](struct.Vertex.html). Equivalent to `self.get(id).is_some()`.
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// let g = PGraph::<usize, usize>::new();
+    /// let (g, vertex_id) = g.add(3);
+    ///
+    /// assert!(g.has_vertex(vertex_id));
+    /// # }
+    /// ```
     #[must_use]
     pub fn has_vertex<T: Borrow<Id>>(&self, id: T) -> bool {
         self.vertex(id).is_some()
@@ -110,6 +121,27 @@ impl<V, E> PGraph<V, E> {
     /// Some reasons this could occur are:
     /// -   This `Id` is from a `PGraph` that isn't an ancestor of the current `PGraph`
     /// -   The `Vertex` corresponding to this `Id` has been removed from the `PGraph`
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// let g = PGraph::<usize, usize>::new();
+    ///
+    /// let (g, id1) = g.add(1);
+    /// let (g, id2) = g.add(2);
+    /// let (g, id3) = g.add(3);
+    ///
+    /// let g = g.connect(id1, id2, 12);
+    /// let g = g.connect(id2, id3, 23);
+    /// let g = g.connect(id1, id3, 13);
+    ///
+    /// let v = g.vertex(id1).unwrap();
+    /// assert_eq!(*v.data(), 1);
+    /// assert!(v.is_connected(id2));
+    /// assert_eq!(*v.weight(id3).unwrap(), 13);
+    /// # }
+    /// ```
     #[must_use]
     pub fn vertex<T: Borrow<Id>>(&self, id: T) -> Option<&Vertex<V, E>> {
         match self.guts.get(id.borrow().index()) {
@@ -120,18 +152,77 @@ impl<V, E> PGraph<V, E> {
 
     /// Gets the data from the [Vertex](struct.Vertex.html) corresponding to a given [Id](struct.Id.html). Will return `None`
     /// if such a [Vertex](struct.Vertex.html) cannot be found. Equivalent to `self.get(id).data()`
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// let g = PGraph::<usize, usize>::new();
+    /// let (g, id) = g.add(3);
+    ///
+    /// assert_eq!(*g.vertex_data(id).unwrap(), 3);
+    /// # }
+    /// ```
     #[must_use]
     pub fn vertex_data<T: Borrow<Id>>(&self, id: T) -> Option<&V> {
         self.vertex(id).map(|v| v.data())
     }
 
     /// Returns true iff there exist vertices corresponding to both `source` and `sink` and `source` has an outgoing edge to `sink`.
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// let g = PGraph::<usize, usize>::new();
+    ///
+    /// let (g, id1) = g.add(1);
+    /// let (g, id2) = g.add(2);
+    /// let (g, id3) = g.add(3);
+    ///
+    /// let g = g.connect(id1, id2, 12);
+    /// let g = g.connect(id3, id2, 32);
+    /// let g = g.connect(id1, id3, 13);
+    ///
+    /// assert!(g.has_edge(id1, id2));
+    /// assert!(g.has_edge(id1, id3));
+    /// assert!(g.has_edge(id3, id2));
+    ///
+    /// assert!(!g.has_edge(id2, id1));
+    /// assert!(!g.has_edge(id3, id1));
+    /// assert!(!g.has_edge(id2, id3));
+    /// # }
+    /// ```
     #[must_use]
     pub fn has_edge<T: Borrow<Id>>(&self, source: T, sink: T) -> bool {
         self.vertex(source).map_or(false, |v| v.is_connected(sink))
     }
 
     /// If there exists an outgoing edge from `source` to `sink`, returns a reference to that edge's weight. Otherwise, returns `None`.
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// let g = PGraph::<usize, usize>::new();
+    ///
+    /// let (g, id1) = g.add(1);
+    /// let (g, id2) = g.add(2);
+    /// let (g, id3) = g.add(3);
+    ///
+    /// let g = g.connect(id1, id2, 12);
+    /// let g = g.connect(id3, id2, 32);
+    /// let g = g.connect(id1, id3, 13);
+    ///
+    /// assert_eq!(*g.weight(id1, id2).unwrap(), 12);
+    /// assert_eq!(*g.weight(id1, id3).unwrap(), 13);
+    /// assert_eq!(*g.weight(id3, id2).unwrap(), 32);
+    ///
+    /// assert!(g.weight(id2, id1).is_none());
+    /// assert!(g.weight(id3, id1).is_none());
+    /// assert!(g.weight(id2, id3).is_none());
+    /// # }
+    /// ```
     #[must_use]
     pub fn weight<T: Borrow<Id>>(&self, source: T, sink: T) -> Option<&E> {
         self.vertex(source).and_then(|v| v.weight(sink))
@@ -140,6 +231,18 @@ impl<V, E> PGraph<V, E> {
     /// Modifies the PGraph to contain a new vertex containing `data`. (The vertex won't be connected to anything.)
     ///
     /// Returns the new PGraph and the new vertex's Id.
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// let g = PGraph::<usize, usize>::new();
+    /// let (g, id) = g.add(1);
+    ///
+    /// assert!(g.has_vertex(id));
+    /// assert_eq!(*g.vertex_data(id).unwrap(), 1);
+    /// # }
+    /// ```
     #[must_use]
     pub fn add(&self, data: V) -> (Self, Id) {
         let mut result = self.clone();
@@ -149,6 +252,18 @@ impl<V, E> PGraph<V, E> {
 
     /// Modifies the PGraph in-place to contain a new vertex containing `data`. (The vertex won't be connected to anything.)  
     /// Returns the new vertex's Id.
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// let mut g = PGraph::<usize, usize>::new();
+    /// let id = g.add_mut(1);
+    ///
+    /// assert!(g.has_vertex(id));
+    /// assert_eq!(*g.vertex_data(id).unwrap(), 1);
+    /// # }
+    /// ```
     pub fn add_mut(&mut self, data: V) -> Id {
         match self.find_empty() {
             Some(index) => {
@@ -167,9 +282,26 @@ impl<V, E> PGraph<V, E> {
     /// Adds multiple vertices to the PGraph. Each contains one of the elements contained in `data_iter`.  
     /// Returns the new PGraph and a Vec of the added [Id](struct.Id.html)s. The order of [Id](struct.Id.html)s in the Vec correspond the position in the `data_iter` from which that vertex's data came.
     ///
-    /// Prefer over iterating and calling `add` yourself because this makes less calls to `clone`.
+    /// Prefer this method over iterating and calling `add` yourself. That would `clone` the PGraph once for each call to `add`, while this method will only clone once.
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// let g = PGraph::<usize, usize>::new();
+    /// let data: Vec<usize> = vec![0, 1, 2, 3];
+    /// let (g, ids): (_, Vec<_>) = g.add_all(data);
+    ///
+    /// for (i, id) in ids.iter().enumerate() {
+    ///     assert_eq!(*g.vertex_data(id).unwrap(), i);
+    /// }
+    /// # }
+    /// ```
     #[must_use]
-    pub fn add_all<T: Into<V>, I: IntoIterator<Item = T>>(&self, data_iter: I) -> (Self, Vec<Id>) {
+    pub fn add_all<B: FromIterator<Id>, T: Into<V>, I: IntoIterator<Item = T>>(
+        &self,
+        data_iter: I,
+    ) -> (Self, B) {
         let mut result = self.clone();
         let ids = result.add_all_mut(data_iter);
         (result, ids)
@@ -178,8 +310,25 @@ impl<V, E> PGraph<V, E> {
     /// Adds multiple vertices to the PGraph in-place. Each contains one of the elements contained in `data_iter`.  
     /// Returns a Vec of the added [Id](struct.Id.html)s. The order of [Id](struct.Id.html)s in the Vec correspond the position in the `data_iter` from which that vertex's data came.
     ///
-    /// TODO: Use batch insert when RPDS supports it, so that this is better than iterating and calling `add_mut`
-    pub fn add_all_mut<T: Into<V>, I: IntoIterator<Item = T>>(&mut self, vertices: I) -> Vec<Id> {
+    /// TODO: Right now, this is functionally equivalent to iterating and calling `add_mut` yourself. If/when `im::vector` supports extending, we should use that instead.
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// let mut g = PGraph::<usize, usize>::new();
+    /// let data: Vec<usize> = vec![0, 1, 2, 3];
+    /// let ids: Vec<_> = g.add_all_mut(data);
+    ///
+    /// for (i, id) in ids.iter().enumerate() {
+    ///     assert_eq!(*g.vertex_data(id).unwrap(), i);
+    /// }
+    /// # }
+    /// ```
+    pub fn add_all_mut<'a, B: FromIterator<Id>, T: Into<V>, I: IntoIterator<Item = T> + 'a>(
+        &'a mut self,
+        vertices: I,
+    ) -> B {
         vertices
             .into_iter()
             .map(|v| self.add_mut(v.into()))
@@ -187,6 +336,28 @@ impl<V, E> PGraph<V, E> {
     }
 
     /// Returns an iterator over all the valid vertex [Id](struct.Id.html)s in the PGraph
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # use std::collections::HashSet;
+    /// # fn main() {
+    /// let mut init_data = HashSet::new();
+    /// init_data.insert("John");
+    /// init_data.insert("Francisco");
+    /// init_data.insert("Ragnar");
+    ///
+    /// let mut g = PGraph::<&str, usize>::new();
+    /// let _: Vec<_> = g.add_all_mut(init_data.iter().cloned());
+    ///
+    /// let mut vertex_data = HashSet::new();
+    /// for id in g.ids() {
+    ///     vertex_data.insert(*g.vertex_data(id).unwrap());
+    /// }
+    ///
+    /// assert_eq!(init_data, vertex_data);
+    /// # }
+    /// ```
     #[must_use]
     pub fn ids(&self) -> IdIter<V, E> {
         self.guts.iter().filter_map(|v_opt| match v_opt {
@@ -196,6 +367,28 @@ impl<V, E> PGraph<V, E> {
     }
 
     /// Returns an iterator over all the valid vertex data in the PGraph
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # use std::collections::HashSet;
+    /// # fn main() {
+    /// let mut init_data = HashSet::new();
+    /// init_data.insert("Roark");
+    /// init_data.insert("Francon");
+    /// init_data.insert("Mallory");
+    ///
+    /// let mut g = PGraph::<&str, ()>::new();
+    /// let _: Vec<_> = g.add_all_mut(init_data.iter().cloned());
+    ///
+    /// let mut vertex_data = HashSet::new();
+    /// for name in g.iter_data() {
+    ///     vertex_data.insert(*name);
+    /// }
+    ///
+    /// assert_eq!(init_data, vertex_data);
+    /// # }
+    /// ```
     #[must_use]
     pub fn iter_data(&self) -> impl Iterator<Item = &V> {
         self.guts.iter().filter_map(|v_opt| match v_opt {
@@ -205,6 +398,27 @@ impl<V, E> PGraph<V, E> {
     }
 
     /// Returns an iterator over all wieghts of edges existing in the PGraph
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # use std::collections::HashSet;
+    /// # fn main() {
+    /// # let mut init_data: Vec<usize> = vec![1, 2, 3];
+    /// let mut g = PGraph::<usize, usize>::new();
+    /// let ids: Vec<_> = g.add_all_mut(init_data);
+    ///
+    /// let iter_edges: Vec<usize> = vec![1, 2, 3];
+    /// g.connect_mut(ids[0], ids[1], iter_edges[0]);
+    /// g.connect_mut(ids[2], ids[1], iter_edges[1]);
+    /// g.connect_mut(ids[2], ids[0], iter_edges[2]);
+    ///
+    /// let expected: HashSet<_> = iter_edges.into_iter().collect();
+    /// let actual: HashSet<_> = g.iter_weights().cloned().collect();
+    ///
+    /// assert_eq!(actual, expected);
+    /// # }
+    /// ```
     #[must_use]
     pub fn iter_weights(&self) -> impl Iterator<Item = &E> {
         self.guts
@@ -217,7 +431,8 @@ impl<V, E> PGraph<V, E> {
             .map(|(_, weight)| weight)
     }
 
-    /// Returns an iterator over all vertices in the PGraph with an edge that _ends_ at `sink`.
+    /// Returns an iterator over all the edges in the PGraph that _end_ at `sink`.  
+    /// The iterator's items (source: Id, sink: Id, edge: &E)
     #[must_use]
     pub fn predecessors<T: Borrow<Id>>(&self, sink: T) -> PredecessorIter<V, E> {
         PredecessorIter {
@@ -226,6 +441,7 @@ impl<V, E> PGraph<V, E> {
         }
     }
 
+    /// Returns an iterator over all the [Id](struct.Id.html)s of vertices in the PGraph with an edge that _ends_ at `sink`.
     #[must_use]
     pub fn predecessor_ids<T: Borrow<Id>>(&self, sink: T) -> PredecessorIdIter<V, E> {
         PredecessorIter {
@@ -235,7 +451,8 @@ impl<V, E> PGraph<V, E> {
         .map(|(source, _, _)| source)
     }
 
-    /// Returns an iterator over all wieghts of edges existing in the PGraph that _start_ at `source`.
+    /// Returns an iterator over all the edges in the PGraph that _start_ at `source`.  
+    /// The iterator's items (source: Id, sink: Id, edge: &E)
     #[must_use]
     pub fn outbound_edges<T: Borrow<Id>>(&self, source: T) -> OutboundIter<E> {
         self.vertex(source)
@@ -244,6 +461,7 @@ impl<V, E> PGraph<V, E> {
             .flatten()
     }
 
+    /// Returns an iterator over all the [Id](struct.Id.html)s of vertices in the PGraph with an edge that _starts_ at `source`.
     #[must_use]
     pub fn outbound_ids<T: Borrow<Id>>(&self, source: T) -> OutboundIdIter<E> {
         self.vertex(source)
@@ -325,7 +543,29 @@ pub type OutboundIter<'a, E> = Flatten<std::option::IntoIter<NodeEdgeIter<'a, E>
 
 impl<V: Clone, E> PGraph<V, E> {
     /// Gets a mutable reference data from the [Vertex](struct.Vertex.html) corresponding to a given [Id](struct.Id.html). Will return `None`
-    /// if such a [Vertex](struct.Vertex.html) cannot be found. Equivalent to `self.get_mut(id).data_mut()`
+    /// if such a [Vertex](struct.Vertex.html) cannot be found. Equivalent to `self.get_mut(id).data_mut()`.
+    /// `*self.vertex_data_mut(id).unwrap()` is equivalent to `self.index_mut[(id,)]`.
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// let mut init_data = Vec::new();
+    /// init_data.push("Francon");
+    /// init_data.push("Hayer");
+    ///
+    /// let mut g = PGraph::<&str, ()>::new();
+    /// let ids: Vec<_> = g.add_all_mut(init_data.iter().cloned());
+    ///
+    /// *g.vertex_data_mut(ids[1]).unwrap() = "Keating";
+    ///
+    /// let data0 = &g[(ids[0],)];
+    /// let data1 = &g[(ids[1],)];
+    ///
+    /// assert_eq!(data0, &"Francon");
+    /// assert_eq!(data1, &"Keating");
+    /// # }
+    /// ```
     #[must_use]
     pub fn vertex_data_mut<T: Borrow<Id>>(&mut self, id: T) -> Option<&mut V> {
         self.vertex_mut(id).map(|v| v.data_mut())
@@ -335,6 +575,26 @@ impl<V: Clone, E> PGraph<V, E> {
     ///
     /// Returns the new, modified version of the PGraph.  
     /// Panics if `source` and/or `sink` is not in the PGraph
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// let g = PGraph::<usize, usize>::new();
+    ///
+    /// let (g, id1) = g.add(1);
+    /// let (g, id2) = g.add(2);
+    /// let (g, id3) = g.add(3);
+    ///
+    /// let g = g.connect(id1, id2, 12);
+    /// let g = g.connect(id2, id3, 23);
+    /// let g = g.connect(id1, id3, 13);
+    ///
+    /// assert_eq!(g[(id1, id2)], 12);
+    /// assert_eq!(g[(id2, id3)], 23);
+    /// assert_eq!(g[(id1, id3)], 13);
+    /// # }
+    /// ```
     #[must_use]
     pub fn connect<T: Borrow<Id>>(&self, source: T, sink: T, weight: E) -> Self {
         let mut result = self.clone();
@@ -345,6 +605,26 @@ impl<V: Clone, E> PGraph<V, E> {
     /// Tries to create an edge from `source` to `sink`. If there already exists an edge, it will be overwritten. (Vertices can have edges to themselves.)
     ///
     /// Returns the new, modified version of the PGraph, or `None` if `source` and/or `sink` is not in the PGraph.
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// # let (_, bad_id) = PGraph::<usize, usize>::new().add(0);
+    /// let g = PGraph::<usize, usize>::new();
+    ///
+    /// let (g, id1) = g.add(1);
+    /// let (g, id2) = g.add(2);
+    /// let (g, id3) = g.add(3);
+    ///
+    /// let maybe_g = g.try_connect(id1, id2, 12);
+    /// assert!(maybe_g.is_some());
+    /// let g = maybe_g.unwrap();
+    ///
+    /// let maybe_g = g.try_connect(id2, bad_id, 20);
+    /// assert!(maybe_g.is_none());
+    /// # }
+    /// ```
     #[must_use]
     pub fn try_connect<T: Borrow<Id>>(&self, source: T, sink: T, weight: E) -> Option<Self> {
         let source = source.borrow();
@@ -362,6 +642,26 @@ impl<V: Clone, E> PGraph<V, E> {
     /// Creates an edge from `source` to `sink`, in-place. If there already exists an edge, it will be overwritten. (Vertices can have edges to themselves.)
     ///
     /// Panics if `source` and/or `sink` is not in the PGraph
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// let mut  g = PGraph::<usize, usize>::new();
+    ///
+    /// let id1 = g.add_mut(1);
+    /// let id2 = g.add_mut(2);
+    /// let id3 = g.add_mut(3);
+    ///
+    /// g.connect_mut(id1, id2, 12);
+    /// g.connect_mut(id2, id3, 23);
+    /// g.connect_mut(id1, id3, 13);
+    ///
+    /// assert_eq!(g[(id1, id2)], 12);
+    /// assert_eq!(g[(id2, id3)], 23);
+    /// assert_eq!(g[(id1, id3)], 13);
+    /// # }
+    /// ```
     pub fn connect_mut<T: Borrow<Id>>(&mut self, source: T, sink: T, weight: E) {
         let sink = sink.borrow();
 
@@ -378,6 +678,26 @@ impl<V: Clone, E> PGraph<V, E> {
     /// Tries to create an edge from `source` to `sink`. If there already exists an edge, it will be overwritten. (Vertices can have edges to themselves.)
     ///
     /// Returns `false` iff the edge couldn't be created (i.e. `source` and/or `sink` is not in the PGraph)
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// # let (_, bad_id) = PGraph::<usize, usize>::new().add(0);
+    /// let mut g = PGraph::<usize, usize>::new();
+    ///
+    /// let id1 = g.add_mut(1);
+    /// let id2 = g.add_mut(2);
+    /// let id3 = g.add_mut(3);
+    ///
+    /// let it_worked = g.try_connect_mut(id1, id2, 12);
+    /// assert!(it_worked);
+    /// assert_eq!(12, g[(id1, id2)]);
+    ///
+    /// let it_worked = g.try_connect_mut(id2, bad_id, 20);
+    /// assert!(!it_worked);
+    /// # }
+    /// ```
     pub fn try_connect_mut<T: Borrow<Id>>(&mut self, source: T, sink: T, weight: E) -> bool {
         let sink = sink.borrow();
 
@@ -395,6 +715,27 @@ impl<V: Clone, E> PGraph<V, E> {
     /// Some reasons this could occur are:
     /// -   This `Id` is from a `PGraph` that isn't an ancestor of the current `PGraph`
     /// -   The `Vertex` corresponding to this `Id` has been removed from the `PGraph`
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// # let (_, bad_id) = PGraph::<usize, usize>::new().add(0);
+    /// let mut g = PGraph::<usize, usize>::new();
+    ///
+    /// let id1 = g.add_mut(1);
+    /// let id2 = g.add_mut(2);
+    /// let id3 = g.add_mut(3);
+    ///
+    /// let maybe_v = g.vertex_mut(bad_id);
+    /// assert!(maybe_v.is_none());
+    ///
+    /// let maybe_v = g.vertex_mut(id2);
+    /// assert!(maybe_v.is_some());
+    /// *maybe_v.unwrap().data_mut() *= 10;
+    /// assert_eq!(20, g[(id2,)])
+    /// # }
+    /// ```
     #[must_use]
     pub fn vertex_mut<T: Borrow<Id>>(&mut self, id: T) -> Option<&mut Vertex<V, E>> {
         match self.guts.get_mut(id.borrow().index()) {
@@ -424,6 +765,33 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
     }
 
     /// If there exists an outgoing edge from `source` to `sink`, returns a mutable reference to that edge's weight. Otherwise, returns `None`.
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// # let (_, bad_id) = PGraph::<usize, usize>::new().add(0);
+    /// let mut g = PGraph::<usize, usize>::new();
+    ///
+    /// let id1 = g.add_mut(1);
+    /// let id2 = g.add_mut(2);
+    /// let id3 = g.add_mut(3);
+    ///
+    /// g.connect_mut(id1, id2, 12);
+    /// g.connect_mut(id2, id3, 23);
+    ///
+    /// let maybe_w = g.weight_mut(id1, bad_id);
+    /// assert!(maybe_w.is_none());
+    ///
+    /// let maybe_w = g.weight_mut(id1, id3);
+    /// assert!(maybe_w.is_none());
+    ///
+    /// let maybe_w = g.weight_mut(id1, id2);
+    /// assert!(maybe_w.is_some());
+    /// *maybe_w.unwrap() *= 10;
+    /// assert_eq!(120, g[(id1, id2)]);
+    /// # }
+    /// ```
     #[must_use]
     pub fn weight_mut<T: Borrow<Id>>(&mut self, source: T, sink: T) -> Option<&mut E> {
         self.vertex_mut(source).and_then(|v| v.weight_mut(sink))
@@ -438,7 +806,27 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
 
     /// Removes a vertex and all edges from and to it from the PGraph.
     ///
-    /// Returns the modified PGraph, which may be identical to the PGraph passed in if the vertix didn't exist.
+    /// Returns the modified PGraph, which may be identical to the PGraph passed in if the vertex didn't exist.
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// # let (_, bad_id) = PGraph::<usize, usize>::new().add(0);
+    /// let g = PGraph::<usize, usize>::new();
+    ///
+    /// let (g, id1) = g.add(1);
+    /// let (g, id2) = g.add(2);
+    ///
+    /// let g = g.remove(bad_id);
+    /// assert!(g.vertex(id1).is_some());
+    /// assert!(g.vertex(id2).is_some());
+    ///
+    /// let g = g.remove(id1);
+    /// assert!(g.vertex(id1).is_none());
+    /// assert!(g.vertex(id2).is_some());
+    /// # }
+    /// ```
     #[must_use]
     pub fn remove<T: Borrow<Id>>(&self, id: T) -> Self {
         let mut result = self.clone();
@@ -449,6 +837,28 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
     /// Tries to remove a vertex and all edges from and to it from the PGraph.
     ///
     /// Returns the modified PGraph if the vertex existed to be removed, `None` otherwise.
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// # let (_, bad_id) = PGraph::<usize, usize>::new().add(0);
+    /// let g = PGraph::<usize, usize>::new();
+    ///
+    /// let (g, id1) = g.add(1);
+    /// let (g, id2) = g.add(2);
+    ///
+    /// let maybe_g = g.try_remove(bad_id);
+    /// assert!(maybe_g.is_none());
+    ///
+    /// let maybe_g = g.try_remove(id1);
+    /// assert!(maybe_g.is_some());
+    /// let g = maybe_g.unwrap();
+    ///
+    /// assert!(g.vertex(id1).is_none());
+    /// assert!(g.vertex(id2).is_some());
+    /// # }
+    /// ```
     #[must_use]
     pub fn try_remove<T: Borrow<Id>>(&self, id: T) -> Option<Self> {
         let mut result = Cow::Borrowed(self);
@@ -462,6 +872,21 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
     /// Removes multiple vertices and all edges from and to them from the PGraph.
     ///
     /// Returns the modified PGraph, which may be identical to the PGraph passed in if none of the vertices existed.
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// let g = PGraph::<usize, usize>::new();
+    ///
+    /// let (g, id1) = g.add(1);
+    /// let (g, id2) = g.add(2);
+    ///
+    /// let g = g.remove_all(&[id1, id2]);
+    /// let remaining = g.into_iter().count();
+    /// assert_eq!(0, remaining);
+    /// # }
+    /// ```
     #[must_use]
     pub fn remove_all<T: Borrow<Id>, I: IntoIterator<Item = T>>(&self, iterable: I) -> Self {
         let mut result = self.clone();
@@ -472,6 +897,31 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
     /// Remove multiple vertices and all edges from and to them from the PGraph.
     ///
     /// Returns the modified PGraph if one or more of the vertices existed to be removed, otherwise `None`.
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// # let (_, bad_id) = PGraph::<usize, usize>::new().add(0);
+    /// let g = PGraph::<usize, usize>::new();
+    ///
+    /// let (g, id1) = g.add(1);
+    /// let (g, id2) = g.add(2);
+    ///
+    /// let maybe_g = g.try_remove(bad_id);
+    /// assert!(maybe_g.is_none());
+    ///
+    /// let maybe_g = g.try_remove_all(&[bad_id]);
+    /// assert!(maybe_g.is_none());
+    ///
+    /// let maybe_g = g.try_remove_all(&[id1, id2, bad_id]);
+    /// assert!(maybe_g.is_some());
+    /// let g = maybe_g.unwrap();
+    ///
+    /// let remaining = g.into_iter().count();
+    /// assert_eq!(0, remaining);
+    /// # }
+    /// ```
     #[must_use]
     pub fn try_remove_all<T: Borrow<Id>, I: IntoIterator<Item = T>>(
         &self,
@@ -488,6 +938,23 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
     /// Removes the edge from `source` to `sink`, if one exists. Panics if `source` doesn't exist.
     ///
     /// Returns the modified PGraph
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// let g = PGraph::<&str, usize>::new();
+    ///
+    /// let (g, v1) = g.add("Phoenix");
+    /// let (g, v2) = g.add("Durango");
+    ///
+    /// let g = g.connect(v1, v2, 1632);
+    /// assert_eq!(1632, g[(v1, v2)]);
+    ///
+    /// let g = g.disconnect(v1, v2);
+    /// assert!(!g.has_edge(v1, v2));
+    /// # }
+    /// ```
     #[must_use]
     pub fn disconnect<T: Borrow<Id>>(&self, source: T, sink: T) -> Self {
         let mut result = self.clone();
@@ -499,14 +966,41 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
     ///
     /// If both `source` and `sink` exist and there existed an edge from `source` to `sink` to be removed, returns the modified PGraph.
     /// Otherwise, returns `None`.
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// # let (_, bad_id) = PGraph::<usize, usize>::new().add(0);
+    /// let g = PGraph::<&str, usize>::new();
+    ///
+    /// let (g, v1) = g.add("Phoenix");
+    /// let (g, v2) = g.add("Durango");
+    ///
+    /// let g = g.connect(v1, v2, 1632);
+    /// assert_eq!(1632, g[(v1, v2)]);
+    ///
+    /// let maybe_g1 = g.try_disconnect(v2, v1);
+    /// assert!(maybe_g1.is_none());
+    ///
+    /// let maybe_g2 = g.try_disconnect(v1, bad_id);
+    /// assert!(maybe_g2.is_none());
+    ///
+    /// let maybe_g = g.try_disconnect(v1, v2);
+    /// assert!(maybe_g.is_some());
+    /// assert!(!maybe_g.unwrap().has_edge(v1, v2));
+    /// # }
+    /// ```
     #[must_use]
     pub fn try_disconnect<T: Borrow<Id>>(&self, source: T, sink: T) -> Option<Self> {
         let source = source.borrow();
         let sink = sink.borrow();
 
         let mut result = Cow::Borrowed(self);
-        if result.has_vertex(source) && result.has_vertex(sink) {
-            result.to_mut().disconnect_mut(source, sink);
+        if result.has_vertex(source)
+            && result.has_vertex(sink)
+            && result.to_mut().disconnect_mut(source, sink)
+        {
             Some(result.into_owned())
         } else {
             None
@@ -516,6 +1010,28 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
     /// Removes a vertex and all edges from and to it from the PGraph.
     ///
     /// Returns `true` if the vertex existed to be removed, `false` otherwise.
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// # let (_, bad_id) = PGraph::<usize, usize>::new().add(0);
+    /// let mut g = PGraph::<usize, usize>::new();
+    ///
+    /// let v1 = g.add_mut(1);
+    /// let v2 = g.add_mut(2);
+    ///
+    /// let worked = g.remove_mut(bad_id);
+    /// assert!(!worked);
+    /// assert!(g.vertex(v1).is_some());
+    /// assert!(g.vertex(v2).is_some());
+    ///
+    /// let worked = g.remove_mut(v1);
+    /// assert!(worked);
+    /// assert!(g.vertex(v1).is_none());
+    /// assert!(g.vertex(v2).is_some());
+    /// # }
+    /// ```
     pub fn remove_mut<T: Borrow<Id>>(&mut self, id: T) -> bool {
         let id = id.borrow();
 
@@ -531,6 +1047,28 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
     /// Removes multiple vertices and all edges from and to them from the PGraph.
     ///
     /// Returns `true` if one or more vertices existed to be removed, `false` otherwise.
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// # let (_, bad_id) = PGraph::<usize, usize>::new().add(0);
+    /// let mut g = PGraph::<usize, usize>::new();
+    ///
+    /// let v1 = g.add_mut(1);
+    /// let v2 = g.add_mut(2);
+    ///
+    /// let worked = g.remove_all_mut(&[bad_id]);
+    /// assert!(!worked);
+    /// let remaining = g.into_iter().count();
+    /// assert_eq!(2, remaining);
+    ///
+    /// let worked = g.remove_all_mut(&[v1, v2]);
+    /// assert!(worked);
+    /// let remaining = g.into_iter().count();
+    /// assert_eq!(0, remaining);
+    /// # }
+    /// ```
     pub fn remove_all_mut<T: Borrow<Id>, I: IntoIterator<Item = T>>(&mut self, iter: I) -> bool {
         let changed = self.remove_all_mut_no_inc(iter);
         if changed {
@@ -540,6 +1078,11 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
     }
 
     /// Removes multiple vertices without incrementing the PGraph's generation.
+    ///
+    /// Not public because while it isn't `unsafe`, calling it wouthout calling
+    /// `self.idgen.next_gen()` afterwards potentially causes use-after-free problems.
+    /// (If the removed vertex was in the most recent generation, then adding a new
+    /// vertex in its slot will have the same [Id](struct.Id.html) as the old vertex.)
     #[must_use]
     fn remove_all_mut_no_inc<T: Borrow<Id>, I: IntoIterator<Item = T>>(
         &mut self,
@@ -551,6 +1094,11 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
     }
 
     /// Checks if a vertex exists, then removes it without incrementing the PGraph's generation.
+    ///
+    /// Not public because while it isn't `unsafe`, calling it wouthout calling
+    /// `self.idgen.next_gen()` afterwards potentially causes use-after-free problems.
+    /// (If the removed vertex was in the most recent generation, then adding a new
+    /// vertex in its slot will have the same [Id](struct.Id.html) as the old vertex.)
     #[must_use]
     fn try_remove_mut_no_inc<T: Borrow<Id>>(&mut self, id: T) -> bool {
         let id = id.borrow();
@@ -564,6 +1112,11 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
     }
 
     /// Removes a vertex without incrementing the PGraph's generation.
+    ///
+    /// Not public because while it isn't `unsafe`, calling it wouthout calling
+    /// `self.idgen.next_gen()` afterwards potentially causes use-after-free problems.
+    /// (If the removed vertex was in the most recent generation, then adding a new
+    /// vertex in its slot will have the same [Id](struct.Id.html) as the old vertex.)
     fn remove_mut_no_inc<T: Borrow<Id>>(&mut self, id: T) {
         let id = id.borrow();
         let index = id.index();
@@ -575,6 +1128,28 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
     /// Removes the edge from `source` to `sink`, if one exists. Panics if `source` doesn't exist.
     ///
     /// Returns `true` if there was previously an edge from `source` to `sink`
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// let mut g = PGraph::<&str, usize>::new();
+    ///
+    /// let v1 = g.add_mut("Phoenix");
+    /// let v2 = g.add_mut("Durango");
+    ///
+    /// g.connect_mut(v1, v2, 1632);
+    /// assert_eq!(1632, g[(v1, v2)]);
+    ///
+    /// let worked = g.disconnect_mut(v2, v1);
+    /// assert!(!worked);
+    /// assert!(g.has_edge(v1, v2));
+    ///
+    /// let worked = g.disconnect_mut(v1, v2);
+    /// assert!(worked);
+    /// assert!(!g.has_edge(v1, v2));
+    /// # }
+    /// ```
     pub fn disconnect_mut<T: Borrow<Id>>(&mut self, source: T, sink: T) -> bool {
         self[source].disconnect(sink)
     }
@@ -582,6 +1157,33 @@ impl<V: Clone, E: Clone> PGraph<V, E> {
     /// Tries to remove the edge from `source` to `sink`, if one exists.
     ///
     /// Returns `true` if there was previously an edge from `source` to `sink`
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// # let (_, bad_id) = PGraph::<usize, usize>::new().add(0);
+    /// let mut g = PGraph::<&str, usize>::new();
+    ///
+    /// let v1 = g.add_mut("Phoenix");
+    /// let v2 = g.add_mut("Durango");
+    ///
+    /// g.connect_mut(v1, v2, 1632);
+    /// assert_eq!(1632, g[(v1, v2)]);
+    ///
+    /// let worked = g.try_disconnect_mut(bad_id, v1);
+    /// assert!(!worked);
+    /// assert!(g.has_edge(v1, v2));
+    ///
+    /// let worked = g.try_disconnect_mut(v2, v1);
+    /// assert!(!worked);
+    /// assert!(g.has_edge(v1, v2));
+    ///
+    /// let worked = g.try_disconnect_mut(v1, v2);
+    /// assert!(worked);
+    /// assert!(!g.has_edge(v1, v2));
+    /// # }
+    /// ```
     pub fn try_disconnect_mut<T: Borrow<Id>>(&mut self, source: T, sink: T) -> bool {
         self.vertex_mut(source)
             .map_or(false, |v| v.disconnect(sink))

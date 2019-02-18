@@ -217,8 +217,8 @@ fn test_add_all() {
     let vertices: Vec<usize> = vec![0, 1, 2, 3, 4];
     let mut a = PGraph::<usize, usize>::new();
 
-    let (b, b_ids) = a.add_all(vertices.clone());
-    let a_ids = a.add_all_mut(vertices);
+    let (b, b_ids): (_, Vec<_>) = a.add_all(vertices.clone());
+    let a_ids: Vec<_> = a.add_all_mut(vertices);
 
     for (i, (a_id, b_id)) in a_ids.into_iter().zip(b_ids).enumerate() {
         assert_eq!(a[(a_id,)], i);
