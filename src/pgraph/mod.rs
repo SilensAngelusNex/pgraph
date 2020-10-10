@@ -17,11 +17,11 @@ mod external_impls;
 
 type GraphInternal<V, E> = Vector<Option<Vertex<V, E>>>;
 
-/// Represents a persistent graph with data on each vertex (of type V) and directed, weighted edges.
-/// (Edge weights are of type E.) Uses [Id](struct.Id.html)s as references to vertices.
+/// Represents a persistent graph with data on each vertex (of type `V`) and directed, weighted edges.
+/// (Edge weights are of type `E`.) Uses [`Id`](struct.Id.html)s as references to vertices.
 ///
 /// All of the `_mut` methods will mutate the PGraph in-place, while the corresponding methods without `_mut` will clone the existing PGraph and return a modified version.
-/// All of the `try_` methods will not panic if their non-`try` counterparts would, and do less redundant cloning.
+/// All of the `try_` methods do less redundant cloning and will not panic if their non-`try` counterparts would.
 /// All the graph data is held using structual sharing, so the cloning will be minimally expensive, with respect to both time and memory.
 pub struct PGraph<V, E> {
     guts: GraphInternal<V, E>,
@@ -99,7 +99,7 @@ impl<V, E> PGraph<V, E> {
         }
     }
 
-    /// Checks if the given Id points to a valid [Vertex](struct.Vertex.html). Equivalent to `self.get(id).is_some()`.
+    /// Checks if the given Id points to a valid [Vertex](struct.Vertex.html). Equivalent to `self.vertex(id).is_some()`.
     /// # Examples
     ///
     /// ```
@@ -151,7 +151,7 @@ impl<V, E> PGraph<V, E> {
     }
 
     /// Gets the data from the [Vertex](struct.Vertex.html) corresponding to a given [Id](struct.Id.html). Will return `None`
-    /// if such a [Vertex](struct.Vertex.html) cannot be found. Equivalent to `self.get(id).data()`
+    /// if such a [Vertex](struct.Vertex.html) cannot be found. Equivalent to `self.vertex(id).data()`
     /// # Examples
     ///
     /// ```
@@ -381,11 +381,8 @@ impl<V, E> PGraph<V, E> {
     /// let mut g = PGraph::<&str, ()>::new();
     /// let _: Vec<_> = g.add_all_mut(init_data.iter().cloned());
     ///
-    /// let mut vertex_data = HashSet::new();
-    /// for name in g.iter_data() {
-    ///     vertex_data.insert(*name);
-    /// }
-    ///
+    /// let vertex_data = g.iter_data();
+    /// let vertex_data: HashSet<&str> = vertex_data.cloned().collect();
     /// assert_eq!(init_data, vertex_data);
     /// # }
     /// ```
@@ -543,7 +540,7 @@ pub type OutboundIter<'a, E> = Flatten<std::option::IntoIter<NodeEdgeIter<'a, E>
 
 impl<V: Clone, E> PGraph<V, E> {
     /// Gets a mutable reference data from the [Vertex](struct.Vertex.html) corresponding to a given [Id](struct.Id.html). Will return `None`
-    /// if such a [Vertex](struct.Vertex.html) cannot be found. Equivalent to `self.get_mut(id).data_mut()`.
+    /// if such a [Vertex](struct.Vertex.html) cannot be found.
     /// `*self.vertex_data_mut(id).unwrap()` is equivalent to `self.index_mut[(id,)]`.
     /// # Examples
     ///

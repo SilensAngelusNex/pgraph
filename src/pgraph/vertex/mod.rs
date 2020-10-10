@@ -33,6 +33,18 @@ impl<V, E> Clone for Vertex<V, E> {
 
 impl<V, E> Vertex<V, E> {
     /// Returns a reference to the data on this vertex
+    /// # Examples
+    ///
+    /// ```
+    /// # use pgraph::PGraph;
+    /// # fn main() {
+    /// let g = PGraph::<usize, usize>::new();
+    /// let (g, id) = g.add(3);
+    ///
+    /// let v = &g[id];
+    /// assert_eq!(*v.data(), 3);
+    /// # }
+    /// ```
     #[must_use]
     pub fn data(&self) -> &V {
         &self.data

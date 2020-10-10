@@ -3,6 +3,9 @@ use std::borrow::Borrow;
 use std::ops::IndexMut;
 use std::sync::Arc;
 
+/// A view into a single edge on the graph. The edge may either exist and have a weight or not exist and have no weight.
+///
+/// An `Edge` is constructed from the [`edge`](structs.PGraph.html#method.edge) method on [`PGraph`](structs.PGraph.html)
 pub struct Edge<'a, V, E> {
     source: &'a mut Vertex<V, E>,
     sink: Id,
@@ -42,10 +45,10 @@ impl<'a, V, E> Edge<'a, V, E> {
 
 impl<'a, V, E: Clone> Edge<'a, V, E> {
     /// Ensures this edge has a weight by inserting `default` if empty,
-    /// and returns a mutable reference to the value in the entry.
+    /// and returns a mutable reference to the edge's weight.
     ///
     /// Since the value of `default` will be calculated even if it is not needed,
-    /// prefer `or_insert_with` when work has to be done to construct the default.
+    /// prefer `or_insert_with` when work has to be done to construct the default weight.
     /// # Examples
     ///
     /// ```
@@ -76,7 +79,7 @@ impl<'a, V, E: Clone> Edge<'a, V, E> {
     }
 
     /// Ensures this edge has a weight by inserting the result of the `default` function
-    /// if empty, and returns a mutable reference to the value in the entry.
+    /// if empty, and returns a mutable reference to the edge's weight.
     ///
     /// Since the `default` fuction will only be called if its result is needed, `or_insert_with`
     /// should generally be used when work has to be done to construct the default.
@@ -128,12 +131,12 @@ impl<'a, V, E: Clone> Edge<'a, V, E> {
     ///
     /// g.edge(v1, v2)
     ///     .and_modify(|weight| *weight += 7)
-    ///     .or_default();
+    ///     .or_insert(0);
     /// assert_eq!(0, g[(v1, v2)]);
     ///
     /// g.edge(v1, v2)
     ///     .and_modify(|weight| *weight += 13)
-    ///     .or_default();
+    ///     .or_insert(0);
     /// assert_eq!(13, g[(v1, v2)]);
     ///
     /// g.edge(v2, v1)
